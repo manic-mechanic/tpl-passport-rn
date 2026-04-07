@@ -1,0 +1,187 @@
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useTheme } from '@/src/hooks/useTheme'
+import { usePassportStore } from '@/src/stores/passport'
+import { fonts, radius, textSize } from '@/src/theme'
+
+const THEME_OPTIONS = [
+  { value: 'light' as const, label: 'Light' },
+  { value: '' as const,      label: 'Auto' },
+  { value: 'dark' as const,  label: 'Dark' },
+]
+
+export default function SettingsScreen() {
+  const theme = useTheme()
+  const insets = useSafeAreaInsets()
+  const profile = usePassportStore(s => s.profile)
+  const updateProfile = usePassportStore(s => s.updateProfile)
+
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.bg }]}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 24 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <Text style={[styles.brandTitle, { color: theme.tplNavy, fontFamily: fonts.display }]}>
+          passport<Text style={{ color: theme.tplBlue }}>:</Text>
+        </Text>
+      </View>
+
+      {/* Account */}
+      <View style={styles.group}>
+        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Account</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+          <View style={styles.settingRow}>
+            <View style={styles.labelWrap}>
+              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
+              <Text style={[styles.settingHint, { color: theme.textMuted }]}>
+                Access your passport on any device
+              </Text>
+            </View>
+            <Text style={[styles.signInLink, { color: theme.tplBlue }]}>Sign in →</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Appearance */}
+      <View style={styles.group}>
+        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Appearance</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+          <View style={styles.settingRow}>
+            <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Theme</Text>
+            <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+              {THEME_OPTIONS.map(opt => (
+                <TouchableOpacity
+                  key={String(opt.value)}
+                  style={[
+                    styles.themeBtn,
+                    profile.theme === opt.value && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                  ]}
+                  onPress={() => updateProfile({ theme: opt.value })}
+                >
+                  <Text style={[
+                    styles.themeBtnText,
+                    { color: profile.theme === opt.value ? theme.textPrimary : theme.textMuted },
+                  ]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Developer */}
+      <View style={styles.group}>
+        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Developer</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+          <View style={styles.settingRow}>
+            <View style={styles.labelWrap}>
+              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Location check</Text>
+              <Text style={[styles.settingHint, { color: theme.textMuted }]}>
+                Require being within 100 m to check in
+              </Text>
+            </View>
+            <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+              {[{ v: false, l: 'On' }, { v: true, l: 'Off' }].map(opt => (
+                <TouchableOpacity
+                  key={String(opt.v)}
+                  style={[
+                    styles.themeBtn,
+                    profile.bypassLocationFence === opt.v && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                  ]}
+                  onPress={() => updateProfile({ bypassLocationFence: opt.v })}
+                >
+                  <Text style={[
+                    styles.themeBtnText,
+                    { color: profile.bypassLocationFence === opt.v ? theme.textPrimary : theme.textMuted },
+                  ]}>
+                    {opt.l}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* About */}
+      <View style={styles.group}>
+        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>About</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+          <View style={[styles.aboutRow, { borderBottomColor: theme.borderSoft }]}>
+            <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Version</Text>
+            <Text style={[styles.aboutVal, { color: theme.textMuted }]}>1.0 MVP</Text>
+          </View>
+          <View style={[styles.aboutRow, { borderBottomWidth: 0 }]}>
+            <Text style={[styles.aboutLink, { color: theme.tplBlue }]}>Toronto Public Library ↗</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { paddingHorizontal: 18 },
+  header: { marginBottom: 24 },
+  brandTitle: { fontSize: textSize.xl, fontWeight: '700', letterSpacing: -0.4 },
+  group: { marginBottom: 24 },
+  groupLabel: {
+    fontSize: textSize.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  card: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  labelWrap: { flex: 1, marginRight: 12 },
+  settingLabel: { fontSize: textSize.md, fontWeight: '600' },
+  settingHint: { fontSize: textSize.sm, marginTop: 2, lineHeight: 16 },
+  signInLink: { fontSize: textSize.md, fontWeight: '600' },
+  themeToggle: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 2,
+  },
+  themeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  themeBtnActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  themeBtnText: { fontSize: textSize.md, fontWeight: '600' },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 13,
+    borderBottomWidth: 1,
+  },
+  aboutVal: { fontSize: textSize.md },
+  aboutLink: { fontSize: textSize.md, fontWeight: '600' },
+})
