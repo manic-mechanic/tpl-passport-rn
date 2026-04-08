@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
@@ -17,7 +18,7 @@ export function PassportCard() {
   const checkIns = usePassportStore(s => s.checkIns)
   const updateProfile = usePassportStore(s => s.updateProfile)
 
-  const [showBranchPicker, setShowBranchPicker] = useState(false)
+  const branchPickerRef = useRef<BottomSheetModal>(null)
 
   const visitCount = new Set(checkIns.map(c => c.branchCode)).size
   const progressPct = Math.round((visitCount / physicalBranches.length) * 100)
@@ -48,7 +49,7 @@ export function PassportCard() {
               </View>
               <View>
                 <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Home Branch</Text>
-                <TouchableOpacity onPress={() => setShowBranchPicker(true)}>
+                <TouchableOpacity onPress={() => branchPickerRef.current?.present()}>
                   <Text style={[styles.fieldValue, { color: profile.homeBranch ? theme.tplBlue : theme.textMuted }]} numberOfLines={1}>
                     {profile.homeBranch ? branchNameForCode(profile.homeBranch) : 'Tap to set'}
                   </Text>
@@ -95,10 +96,9 @@ export function PassportCard() {
       </View>
 
       <BranchPickerModal
-        visible={showBranchPicker}
+        ref={branchPickerRef}
         selectedCode={profile.homeBranch}
         onSelect={code => updateProfile({ homeBranch: code })}
-        onClose={() => setShowBranchPicker(false)}
       />
     </>
   )

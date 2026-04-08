@@ -69,7 +69,7 @@ export function RecentVisits() {
           Recent Visits
         </Text>
         {recentEntries.length > 0 && (
-          <TouchableOpacity onPress={() => router.push('/(tabs)/passport')}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/(passport)')}>
             <Text style={[styles.seeAll, { color: theme.tplBlue }]}>See all</Text>
           </TouchableOpacity>
         )}
@@ -99,7 +99,7 @@ export function RecentVisits() {
               <View style={styles.stampSlot}>
                 <TouchableOpacity
                   style={styles.stampTouchable}
-                  onPress={() => router.push(`/branch/${item.branch.BranchCode}` as any)}
+                  onPress={() => router.push(`./branch/${item.branch.BranchCode}` as any)}
                 >
                   <View style={styles.stampArea}>
                     <StampShape branchCode={item.branch.BranchCode} wardNo={item.branch.WardNo} size={62} />

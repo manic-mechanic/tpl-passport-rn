@@ -70,8 +70,7 @@ export function CheckInSuccess({ branch, timestamp, onDone }: Props) {
         <TouchableOpacity
           style={[styles.viewBranchBtn, { backgroundColor: theme.tplNavy }]}
           onPress={() => {
-            onDone()
-            router.push(`/branch/${branch.BranchCode}` as any)
+            router.push(`./branch/${branch.BranchCode}` as any)
           }}
         >
           <Text style={styles.viewBranchBtnText}>View branch</Text>

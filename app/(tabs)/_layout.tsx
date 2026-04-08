@@ -17,7 +17,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
@@ -26,7 +26,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="(explore)"
         options={{
           title: 'Explore',
           tabBarIcon: ({ color, focused }) => (
@@ -35,7 +35,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="check-in"
+        name="(check-in)"
         options={{
           title: 'Check In',
           tabBarIcon: ({ color, focused }) => (
@@ -44,7 +44,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="passport"
+        name="(passport)"
         options={{
           title: 'Passport',
           tabBarIcon: ({ color, focused }) => (
@@ -53,7 +53,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="(settings)"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
@@ -61,7 +61,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="two" options={{ href: null }} />
     </Tabs>
   )
 }

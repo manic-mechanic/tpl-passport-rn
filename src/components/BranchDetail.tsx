@@ -130,7 +130,7 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
         ) : (
           <TouchableOpacity
             style={[styles.checkInBtn, { backgroundColor: theme.tplBlue }]}
-            onPress={() => router.push(`/(tabs)/check-in?branch=${branch.BranchCode}` as any)}
+            onPress={() => router.navigate(`/(tabs)/(check-in)?branch=${branch.BranchCode}` as any)}
           >
             <Text style={styles.checkInBtnText}>
               {visited ? 'Check in again' : 'Check in here'}

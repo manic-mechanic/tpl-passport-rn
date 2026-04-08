@@ -94,7 +94,7 @@ export default function ExploreScreen() {
                     { borderBottomColor: theme.borderSoft },
                     i === nearBy.length - 1 && { borderBottomWidth: 0 },
                   ]}
-                  onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
+                  onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
                 >
                   <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={38} ghost={!hasVisited(branch.BranchCode)} />
                   <View style={styles.nearInfo}>
@@ -149,7 +149,7 @@ export default function ExploreScreen() {
                   {routeBranches.map((branch) => (
                     <TouchableOpacity
                       key={branch.BranchCode}
-                      onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
+                      onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
                       style={styles.routeStampItem}
                     >
                       <View style={styles.routeStampArea}>

@@ -44,7 +44,7 @@ export default function PassportScreen() {
   }
 
   function openBranch(branch: Branch) {
-    router.push(`/branch/${branch.BranchCode}` as any)
+    router.push(`./branch/${branch.BranchCode}` as any)
   }
 
   const stampData = useMemo<(Branch | { BranchCode: string; _phantom: true })[]>(() => {

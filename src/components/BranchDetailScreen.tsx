@@ -8,7 +8,7 @@ import { BranchDetail } from '@/src/components/BranchDetail'
 import { fonts, textSize } from '@/src/theme'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
-export default function BranchDetailModal() {
+export default function BranchDetailScreen() {
   const theme = useTheme()
   const insets = useSafeAreaInsets()
   const router = useRouter()
@@ -26,8 +26,8 @@ export default function BranchDetailModal() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.closeBtn}>
-          <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
+        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { fontFamily: fonts.display }]} numberOfLines={1}>
           {branch?.BranchName ?? ''}
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 12,
   },
-  closeBtn: { width: 30 },
+  backBtn: { width: 30 },
   headerTitle: {
     flex: 1,
     fontSize: textSize.lg,
