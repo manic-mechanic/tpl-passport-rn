@@ -54,7 +54,7 @@ export function maxNonHomeVisitCount(counts: Record<string, number>, homeBranch:
 }
 
 export function fullyDocumentedCount(checkIns: CheckIn[]) {
-  return checkIns.filter(c => c.note?.trim() && c.hasPhoto).length
+  return checkIns.filter(c => c.note?.trim() && c.photoUri).length
 }
 
 const fmtDate = (ts: string) =>
@@ -241,7 +241,7 @@ export const BADGES: Badge[] = [
     earned:   (ctx: BadgeCtx) => ctx.fullyDocumentedCount >= 1,
     progress: (ctx: BadgeCtx) => ({ current: Math.min(ctx.fullyDocumentedCount, 1), total: 1 }),
     earnedAt: (ctx: BadgeCtx) => {
-      const ci = [...ctx.checkIns].sort((a, b) => a.timestamp.localeCompare(b.timestamp)).find(c => c.note?.trim() && c.hasPhoto)
+      const ci = [...ctx.checkIns].sort((a, b) => a.timestamp.localeCompare(b.timestamp)).find(c => c.note?.trim() && c.photoUri)
       return ci ? fmtDate(ci.timestamp) : null
     },
     suggest: () => ({ pct: 0, message: 'Add a note and photo to any check-in', branches: [] }) },

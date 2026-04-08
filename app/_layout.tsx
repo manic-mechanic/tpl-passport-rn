@@ -10,6 +10,9 @@ import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { colors, dark } from '@/src/theme';
+import { authClient } from '@/src/lib/auth-client';
+import { usePassportStore } from '@/src/stores/passport';
+import { migrateLocalPhotos } from '@/src/lib/upload';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -56,6 +59,15 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const navyBg = colorScheme === 'dark' ? dark.tplNavy : colors.tplNavy;
+  const { data: session } = authClient.useSession();
+  const checkIns = usePassportStore(s => s.checkIns);
+  const setCheckInPhoto = usePassportStore(s => s.setCheckInPhoto);
+
+  // When the user signs in, migrate any locally-stored photos to R2.
+  useEffect(() => {
+    if (!session?.user) return;
+    migrateLocalPhotos(checkIns, setCheckInPhoto);
+  }, [session?.user?.id]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: navyBg }}>

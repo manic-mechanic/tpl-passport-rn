@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
+import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { physicalBranches } from '../composables/useRegion'
 import { StampShape } from './StampShape'
 import { fonts, textSize } from '../theme'
@@ -20,6 +22,23 @@ function DashedSeparator({ color }: { color: string }) {
   )
 }
 
+function PhotoAction({ timestamp, photoUri }: { timestamp: string; photoUri?: string }) {
+  const theme = useTheme()
+  const { pickPhoto, uploading } = usePhotoPicker(timestamp)
+
+  if (photoUri) {
+    return <Image source={{ uri: photoUri }} style={styles.photoThumb} />
+  }
+  return (
+    <TouchableOpacity onPress={pickPhoto} disabled={uploading} style={styles.addPhotoBtn} hitSlop={6}>
+      {uploading
+        ? <ActivityIndicator size="small" color={theme.textMuted} />
+        : <Ionicons name="camera-outline" size={14} color={theme.textMuted} />
+      }
+    </TouchableOpacity>
+  )
+}
+
 const GHOST_CODES = ['GH4', 'GH5', 'GH1']
 const GHOST_WARDS = [5, 9, 3]
 
@@ -28,20 +47,20 @@ export function RecentVisits() {
   const router = useRouter()
   const checkIns = usePassportStore(s => s.checkIns)
 
-  const recentBranches = (() => {
+  const recentEntries = (() => {
     const seen = new Set<string>()
-    const result: Branch[] = []
+    const result: Array<{ branch: Branch; timestamp: string; photoUri?: string }> = []
     for (const ci of checkIns) {
       if (seen.has(ci.branchCode)) continue
       seen.add(ci.branchCode)
       const branch = physicalBranches.find(b => b.BranchCode === ci.branchCode)
-      if (branch) result.push(branch)
+      if (branch) result.push({ branch, timestamp: ci.timestamp, photoUri: ci.photoUri })
       if (result.length >= 3) break
     }
     return result
   })()
 
-  const placeholderCount = Math.max(0, 3 - recentBranches.length)
+  const placeholderCount = Math.max(0, 3 - recentEntries.length)
 
   return (
     <View>
@@ -49,7 +68,7 @@ export function RecentVisits() {
         <Text style={[styles.sectionTitle, { color: theme.textPrimary, fontFamily: fonts.display }]}>
           Recent Visits
         </Text>
-        {recentBranches.length > 0 && (
+        {recentEntries.length > 0 && (
           <TouchableOpacity onPress={() => router.push('/(tabs)/passport')}>
             <Text style={[styles.seeAll, { color: theme.tplBlue }]}>See all</Text>
           </TouchableOpacity>
@@ -58,10 +77,10 @@ export function RecentVisits() {
 
       <View style={styles.stampStrip}>
         {([
-          ...recentBranches,
+          ...recentEntries,
           ...Array.from({ length: placeholderCount }).map((_, i) => ({ _ghost: true as const, _idx: i })),
-        ] as Array<Branch | { _ghost: true; _idx: number }>).map((item, i) => (
-          <View key={'_ghost' in item ? `empty-${item._idx}` : item.BranchCode} style={styles.stampSlotWrapper}>
+        ] as Array<{ branch: Branch; timestamp: string; photoUri?: string } | { _ghost: true; _idx: number }>).map((item, i) => (
+          <View key={'_ghost' in item ? `empty-${item._idx}` : item.branch.BranchCode} style={styles.stampSlotWrapper}>
             {i > 0 && <DashedSeparator color={theme.border} />}
             {'_ghost' in item ? (
               <View style={styles.stampSlot}>
@@ -77,23 +96,26 @@ export function RecentVisits() {
                 </View>
               </View>
             ) : (
-              <TouchableOpacity
-                style={styles.stampSlot}
-                onPress={() => router.push(`/branch/${item.BranchCode}` as any)}
-              >
-                <View style={styles.stampArea}>
-                  <StampShape branchCode={item.BranchCode} wardNo={item.WardNo} size={62} />
-                </View>
-                <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
-                  {item.BranchName}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.stampSlot}>
+                <TouchableOpacity
+                  style={styles.stampTouchable}
+                  onPress={() => router.push(`/branch/${item.branch.BranchCode}` as any)}
+                >
+                  <View style={styles.stampArea}>
+                    <StampShape branchCode={item.branch.BranchCode} wardNo={item.branch.WardNo} size={62} />
+                  </View>
+                  <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
+                    {item.branch.BranchName}
+                  </Text>
+                </TouchableOpacity>
+                <PhotoAction timestamp={item.timestamp} photoUri={item.photoUri} />
+              </View>
             )}
           </View>
         ))}
       </View>
 
-      {recentBranches.length === 0 && (
+      {recentEntries.length === 0 && (
         <Text style={[styles.emptyMessage, { color: theme.textMuted }]}>
           Check in at any branch — your recent visits will appear here.
         </Text>
@@ -131,6 +153,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 6,
     minHeight: 110,
+    gap: 4,
+  },
+  stampTouchable: {
+    alignItems: 'center',
     gap: 8,
   },
   stampArea: {
@@ -144,6 +170,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  addPhotoBtn: {
+    padding: 4,
+  },
+  photoThumb: {
+    width: 48,
+    height: 36,
+    borderRadius: 4,
   },
   emptyMessage: {
     fontSize: textSize.md,

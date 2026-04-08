@@ -19,7 +19,7 @@ interface PassportStore {
   progressPct: () => number
   // actions
   checkIn: (branchCode: string, note?: string) => string | null
-  markCheckInHasPhoto: (timestamp: string) => void
+  setCheckInPhoto: (timestamp: string, uri: string) => void
   updateProfile: (patch: Partial<Profile>) => void
 }
 
@@ -52,10 +52,10 @@ export const usePassportStore = create<PassportStore>()(
         set(s => ({ checkIns: [{ branchCode, timestamp, note }, ...s.checkIns] }))
         return timestamp
       },
-      markCheckInHasPhoto: (timestamp) =>
+      setCheckInPhoto: (timestamp, uri) =>
         set(s => ({
           checkIns: s.checkIns.map(c =>
-            c.timestamp === timestamp ? { ...c, hasPhoto: true } : c
+            c.timestamp === timestamp ? { ...c, photoUri: uri } : c
           )
         })),
       updateProfile: (patch) =>

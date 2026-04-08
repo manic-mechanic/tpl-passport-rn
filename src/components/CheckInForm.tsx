@@ -20,7 +20,7 @@ const LOCATION_TIMEOUT_CODE = 3 // GeolocationPositionError.TIMEOUT
 
 interface Props {
   prefillCode?: string
-  onSuccess: (branch: Branch) => void
+  onSuccess: (branch: Branch, timestamp: string) => void
 }
 
 export function CheckInForm({ prefillCode, onSuccess }: Props) {
@@ -116,7 +116,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
     const timestamp = checkIn(selectedBranch.BranchCode, noteText.trim())
     if (timestamp) {
       setNoteText('')
-      onSuccess(selectedBranch)
+      onSuccess(selectedBranch, timestamp)
     }
   }
 
