@@ -1,20 +1,19 @@
-import { useRef, useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import { useRouter } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
 import { StampShape } from '@/src/components/StampShape'
-import { BranchDetail } from '@/src/components/BranchDetail'
 import { fonts, textSize } from '@/src/theme'
 
 export default function PassportScreen() {
   const theme = useTheme()
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const [activePage, setActivePage] = useState(0)
-  const [selectedBranch, setSelectedBranch] = useState<any>(null)
 
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
@@ -23,9 +22,7 @@ export default function PassportScreen() {
     [checkIns]
   )
 
-  const bottomSheetRef = useRef<BottomSheetModal>(null)
   const flatListRef = useRef<FlatList>(null)
-  const snapPoints = useMemo(() => ['60%', '92%'], [])
 
   const pages = branchesByAlphaPage as any[]
   const currentPage = pages[activePage]
@@ -45,8 +42,7 @@ export default function PassportScreen() {
   }
 
   function openBranch(branch: any) {
-    setSelectedBranch(branch)
-    bottomSheetRef.current?.present()
+    router.push(`/branch/${branch.BranchCode}` as any)
   }
 
   const stampData = useMemo(() => {
@@ -187,17 +183,6 @@ export default function PassportScreen() {
         </TouchableOpacity>
       </View>
 
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        snapPoints={snapPoints}
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: theme.surface }}
-        handleIndicatorStyle={{ backgroundColor: theme.border }}
-      >
-        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}>
-          {selectedBranch && <BranchDetail branch={selectedBranch} />}
-        </BottomSheetScrollView>
-      </BottomSheetModal>
     </View>
   )
 }
