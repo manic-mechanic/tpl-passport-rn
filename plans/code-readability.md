@@ -208,8 +208,8 @@ Verify with a grep for imports before deleting each one.
 
 1. ✅ `src/types/index.ts` — interfaces first, everything else gets easier
 2. ✅ Replace `as any` casts using the new types
-3. Split `check-in.tsx`
-4. Extract MRZ + BranchPickerModal from `PassportCard.tsx`
+3. ✅ Split `check-in.tsx`
+4. ✅ Extract MRZ + BranchPickerModal from `PassportCard.tsx`
 5. ✅ Magic numbers
 6. ✅ Silent catch fix
 7. ✅ `useBadges.ts` section separators (Option A)
