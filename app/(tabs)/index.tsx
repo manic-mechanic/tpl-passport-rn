@@ -11,7 +11,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.tplNavy, paddingTop: insets.top + 12 }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.tplNavy, paddingTop: insets.top + 8 }]}>
         <Text style={[styles.wordmark, { fontFamily: fonts.display }]}>
           passport<Text style={styles.wordmarkColon}>:</Text>
         </Text>
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   topBar: {
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 12,
   },
   wordmark: {
     fontSize: textSize.xxxl,

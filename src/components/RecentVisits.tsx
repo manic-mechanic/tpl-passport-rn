@@ -42,30 +42,40 @@ export function RecentVisits() {
         )}
       </View>
 
-      <View style={[styles.stampStrip, { borderTopColor: theme.border, borderBottomColor: theme.border }]}>
-        {recentBranches.map((branch: any) => (
-          <TouchableOpacity
-            key={branch.BranchCode}
-            style={styles.stampSlot}
-            onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
-          >
-            <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={62} />
-            <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={2}>
-              {branch.BranchName}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        {Array.from({ length: placeholderCount }).map((_, i) => (
-          <View key={`empty-${i}`} style={[styles.stampSlot, styles.stampSlotEmpty]}>
-            <View style={{ opacity: 0.12 }}>
-              <StampShape
-                branchCode={GHOST_CODES[i % GHOST_CODES.length]}
-                wardNo={GHOST_WARDS[i % GHOST_WARDS.length]}
-                size={62}
-                hideCode
-              />
+      <View style={styles.stampStrip}>
+        {[...recentBranches, ...Array.from({ length: placeholderCount }).map((_, i) => ({ _ghost: true, _idx: i }))].map((item: any, i: number) => (
+          item._ghost ? (
+            <View
+              key={`empty-${item._idx}`}
+              style={[
+                styles.stampSlot,
+                i < 2 && { borderRightWidth: 1, borderRightColor: theme.border, borderStyle: 'dashed' as const },
+              ]}
+            >
+              <View style={{ opacity: 0.12 }}>
+                <StampShape
+                  branchCode={GHOST_CODES[item._idx % GHOST_CODES.length]}
+                  wardNo={GHOST_WARDS[item._idx % GHOST_WARDS.length]}
+                  size={62}
+                  hideCode
+                />
+              </View>
             </View>
-          </View>
+          ) : (
+            <TouchableOpacity
+              key={item.BranchCode}
+              style={[
+                styles.stampSlot,
+                i < 2 && { borderRightWidth: 1, borderRightColor: theme.border, borderStyle: 'dashed' as const },
+              ]}
+              onPress={() => router.push(`/branch/${item.BranchCode}` as any)}
+            >
+              <StampShape branchCode={item.BranchCode} wardNo={item.WardNo} size={62} />
+              <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={2}>
+                {item.BranchName}
+              </Text>
+            </TouchableOpacity>
+          )
         ))}
       </View>
 
@@ -95,8 +105,6 @@ const styles = StyleSheet.create({
   },
   stampStrip: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
   },
   stampSlot: {
     flex: 1,

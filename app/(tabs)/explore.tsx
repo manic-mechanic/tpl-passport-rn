@@ -60,7 +60,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.tplNavy }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
         <Text style={[styles.title, { fontFamily: fonts.display }]}>Explore</Text>
       </View>
 
@@ -192,13 +192,14 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 18,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   title: {
-    fontSize: textSize.xl,
+    fontSize: textSize.xxxl,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.92)',
+    letterSpacing: -0.5,
   },
   scroll: { flex: 1 },
   content: {

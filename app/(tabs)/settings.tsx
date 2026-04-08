@@ -17,8 +17,10 @@ export default function SettingsScreen() {
   const updateProfile = usePassportStore(s => s.updateProfile)
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.tplNavy }}>
-    <View style={{ height: insets.top }} />
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+    <View style={[styles.topBar, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
+      <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Settings</Text>
+    </View>
     <ScrollView
       style={[styles.container, { backgroundColor: theme.bg }]}
       contentContainerStyle={[
@@ -27,12 +29,6 @@ export default function SettingsScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={[styles.brandTitle, { color: theme.tplNavy, fontFamily: fonts.display }]}>
-          passport<Text style={{ color: theme.tplBlue }}>:</Text>
-        </Text>
-      </View>
-
       {/* Account */}
       <View style={styles.group}>
         <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Account</Text>
@@ -133,8 +129,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 18 },
-  header: { marginBottom: 24 },
-  brandTitle: { fontSize: textSize.xl, fontWeight: '700', letterSpacing: -0.4 },
+  topBar: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: textSize.xxxl,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: -0.5,
+  },
   group: { marginBottom: 24 },
   groupLabel: {
     fontSize: textSize.xs,

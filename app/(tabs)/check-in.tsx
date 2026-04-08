@@ -118,8 +118,10 @@ export default function CheckInScreen() {
 
   if (successBranch) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.tplNavy }]}>
-        <View style={{ height: insets.top }} />
+      <View style={[styles.container, { backgroundColor: theme.bg }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
+          <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Check In</Text>
+        </View>
         <View style={[styles.successWrap, { paddingTop: 40, backgroundColor: theme.bg }]}>
           <StampShape branchCode={successBranch.BranchCode} wardNo={successBranch.WardNo} size={110} />
           <Text style={[styles.successLabel, { color: theme.textPrimary, fontFamily: fonts.display }]}>
@@ -147,18 +149,19 @@ export default function CheckInScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.tplNavy }]}>
-      <View style={{ height: insets.top }} />
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
+        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Check In</Text>
+      </View>
       <ScrollView
         style={[styles.scroll, { backgroundColor: theme.bg }]}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: 20, paddingBottom: insets.bottom + 24 },
+          { paddingTop: 16, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>Check In</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>
           {detecting
             ? 'Detecting your location…'
@@ -285,9 +288,18 @@ export default function CheckInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: textSize.xxxl,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: -0.5,
+  },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 18, gap: 16 },
-  title: { fontSize: textSize.xxxl, fontWeight: '700' },
   subtitle: { fontSize: textSize.md, lineHeight: 20 },
   locationError: { fontSize: textSize.md, lineHeight: 18 },
   detectingWrap: { alignItems: 'center', paddingVertical: 40 },
