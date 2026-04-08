@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -12,8 +13,15 @@ export default function BranchDetailModal() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { id } = useLocalSearchParams<{ id: string }>()
+  const [currentId, setCurrentId] = useState(id)
+  const scrollRef = useRef<ScrollView>(null)
 
-  const branch = (sortedBranches as any[]).find(b => b.BranchCode === id) ?? null
+  function navigateToNearby(code: string) {
+    setCurrentId(code)
+    scrollRef.current?.scrollTo({ y: 0, animated: false })
+  }
+
+  const branch = (sortedBranches as any[]).find(b => b.BranchCode === currentId) ?? null
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -28,12 +36,13 @@ export default function BranchDetailModal() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
         {branch ? (
-          <BranchDetail branch={branch} />
+          <BranchDetail branch={branch} onNearbyPress={navigateToNearby} />
         ) : (
           <Text style={[styles.notFound, { color: theme.textMuted }]}>Branch not found.</Text>
         )}

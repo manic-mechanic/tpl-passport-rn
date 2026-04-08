@@ -69,9 +69,10 @@ const evtStyles = StyleSheet.create({
 
 interface Props {
   branch: any
+  onNearbyPress?: (branchCode: string) => void
 }
 
-export function BranchDetail({ branch }: Props) {
+export function BranchDetail({ branch, onNearbyPress }: Props) {
   const theme = useTheme()
   const router = useRouter()
   const checkIns = usePassportStore(s => s.checkIns)
@@ -160,7 +161,7 @@ export function BranchDetail({ branch }: Props) {
             <TouchableOpacity
               key={nb.BranchCode}
               style={[styles.nearbyRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
-              onPress={() => router.push(`/branch/${nb.BranchCode}` as any)}
+              onPress={() => onNearbyPress ? onNearbyPress(nb.BranchCode) : router.push(`/branch/${nb.BranchCode}` as any)}
             >
               <StampShape branchCode={nb.BranchCode} wardNo={nb.WardNo} size={36} />
               <View style={styles.nearbyInfo}>
