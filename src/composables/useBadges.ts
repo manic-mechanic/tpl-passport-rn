@@ -4,11 +4,12 @@
 import { useMemo } from 'react'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches, branchesByAlphaPage } from './useRegion'
+import type { CheckIn } from '../types'
 
 // ─── Compass points (furthest branch in each cardinal direction) ─────────────
 
 export const compassPoints = (() => {
-  const geo = (physicalBranches as any[]).filter(b => b.Lat != null && b.Long != null)
+  const geo = physicalBranches.filter(b => b.Lat != null && b.Long != null)
   let n = geo[0], s = geo[0], e = geo[0], w = geo[0]
   for (const b of geo) {
     if (parseFloat(b.Lat) > parseFloat(n.Lat)) n = b
@@ -23,7 +24,7 @@ export const compassBranches = new Set(Object.values(compassPoints))
 
 // ─── Pure helper functions ────────────────────────────────────────────────────
 
-export function maxBranchesInOneDay(checkIns: any[]) {
+export function maxBranchesInOneDay(checkIns: CheckIn[]) {
   const byDay: Record<string, Set<string>> = {}
   for (const c of checkIns) {
     const day = new Date(c.timestamp).toLocaleDateString('en-CA')
@@ -34,7 +35,7 @@ export function maxBranchesInOneDay(checkIns: any[]) {
   return sizes.length ? Math.max(...sizes) : 0
 }
 
-export function branchVisitCounts(checkIns: any[]) {
+export function branchVisitCounts(checkIns: CheckIn[]) {
   const counts: Record<string, number> = {}
   for (const c of checkIns) counts[c.branchCode] = (counts[c.branchCode] ?? 0) + 1
   return counts
@@ -52,14 +53,14 @@ export function maxNonHomeVisitCount(counts: Record<string, number>, homeBranch:
   return max
 }
 
-export function fullyDocumentedCount(checkIns: any[]) {
+export function fullyDocumentedCount(checkIns: CheckIn[]) {
   return checkIns.filter(c => c.note?.trim() && c.hasPhoto).length
 }
 
 const fmtDate = (ts: string) =>
   new Date(ts).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
 
-function nthUniqueDate(checkIns: any[], n: number): string | null {
+function nthUniqueDate(checkIns: CheckIn[], n: number): string | null {
   const sorted = [...checkIns].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
   const seen = new Set<string>()
   for (const ci of sorted) {
@@ -82,7 +83,7 @@ export interface BadgeCtx {
   fullyDocumentedCount: number
   visitedBranchCodes: Set<string>
   completedChallenges: string[]
-  checkIns: any[]
+  checkIns: CheckIn[]
   homeBranch: string
 }
 
@@ -92,7 +93,7 @@ export function buildBadgeCtx({
   completedChallenges,
   homeBranch,
 }: {
-  checkIns: any[]
+  checkIns: CheckIn[]
   visitedBranchCodes: Set<string>
   completedChallenges: string[]
   homeBranch: string
@@ -119,9 +120,25 @@ export function useBadgeCtx(): BadgeCtx {
   const homeBranch         = usePassportStore(s => s.profile.homeBranch)
 
   return useMemo(() => {
-    const visitedBranchCodes = new Set(checkIns.map((c: any) => c.branchCode))
+    const visitedBranchCodes = new Set(checkIns.map(c => c.branchCode))
     return buildBadgeCtx({ checkIns, visitedBranchCodes, completedChallenges, homeBranch })
   }, [checkIns, completedChallenges, homeBranch])
+}
+
+// ─── Badge type ───────────────────────────────────────────────────────────────
+
+import type { Branch } from '../types'
+
+export interface Badge {
+  id: string
+  shape: 'octagon' | 'circle' | 'star'
+  title: string
+  label?: string
+  desc: string
+  earned: (ctx: BadgeCtx) => boolean
+  progress?: (ctx: BadgeCtx) => { current: number; total: number }
+  earnedAt?: (ctx: BadgeCtx) => string | null
+  suggest: (ctx: BadgeCtx) => { pct: number; message: string; branches: Branch[] }
 }
 
 // ─── Badge colors (solid; CSS gradients don't exist in RN) ───────────────────
@@ -142,28 +159,33 @@ export const BADGE_COLORS: Record<string, string> = {
 }
 
 // ─── Badge definitions ────────────────────────────────────────────────────────
+// Grouped by theme. Each badge has: earned(), progress(), earnedAt(), suggest().
 
-export const BADGES = [
+export const BADGES: Badge[] = [
+
+  // ── Milestone (visit count) ──────────────────────────────────────────────
   { id: 'first',         shape: 'octagon', title: 'First Stamp',   label: '1st', desc: 'Check in at your first branch',
     earned:   (ctx: BadgeCtx) => ctx.visitCount >= 1,
     progress: (ctx: BadgeCtx) => ({ current: ctx.visitCount, total: 1 }),
     earnedAt: (ctx: BadgeCtx) => nthUniqueDate(ctx.checkIns, 1),
     suggest:  ()              => ({ pct: 0, message: 'Check in at your first branch', branches: [] }) },
 
+  // ── Passport pages ───────────────────────────────────────────────────────
   { id: 'page_turner',   shape: 'circle',  title: 'Page Turner',                 desc: 'Visit one branch on each page',
-    earned: (ctx: BadgeCtx) => (branchesByAlphaPage as any[]).every((page: any) => page.branches.some((b: any) => ctx.visitedBranchCodes.has(b.BranchCode))),
+    earned: (ctx: BadgeCtx) => branchesByAlphaPage.every(page => page.branches.some(b => ctx.visitedBranchCodes.has(b.BranchCode))),
     suggest: (ctx: BadgeCtx) => {
-      const emptyPages = (branchesByAlphaPage as any[]).filter((page: any) =>
-        !page.branches.some((b: any) => ctx.visitedBranchCodes.has(b.BranchCode))
+      const emptyPages = branchesByAlphaPage.filter(page =>
+        !page.branches.some(b => ctx.visitedBranchCodes.has(b.BranchCode))
       )
-      const visitedPageCount = (branchesByAlphaPage as any[]).length - emptyPages.length
+      const visitedPageCount = branchesByAlphaPage.length - emptyPages.length
       return {
-        pct:      visitedPageCount / (branchesByAlphaPage as any[]).length,
+        pct:      visitedPageCount / branchesByAlphaPage.length,
         message:  `Visit a branch on ${emptyPages.length} more page${emptyPages.length === 1 ? '' : 's'}`,
-        branches: emptyPages.slice(0, 3).map((p: any) => p.branches[0]),
+        branches: emptyPages.slice(0, 3).map(p => p.branches[0]),
       }
     } },
 
+  // ── Activity ─────────────────────────────────────────────────────────────
   { id: 'day_tripper',   shape: 'star',    title: 'Day Tripper',                 desc: 'Visit 2+ branches in one day',
     earned:   (ctx: BadgeCtx) => ctx.maxBranchesInOneDay >= 2,
     progress: (ctx: BadgeCtx) => ({ current: ctx.maxBranchesInOneDay, total: 2 }),
@@ -184,6 +206,7 @@ export const BADGES = [
       branches: [],
     }) },
 
+  // ── Milestone (visit count) cont. ────────────────────────────────────────
   { id: 'explorer',      shape: 'octagon', title: 'Explorer',      label: '10',  desc: 'Visit 10 branches',
     earned:   (ctx: BadgeCtx) => ctx.visitCount >= 10,
     progress: (ctx: BadgeCtx) => ({ current: ctx.visitCount, total: 10 }),
@@ -194,18 +217,18 @@ export const BADGES = [
     } },
 
   { id: 'page_filler',   shape: 'circle',  title: 'Page Filler',   label: '★',   desc: 'Fill one complete page',
-    earned: (ctx: BadgeCtx) => (branchesByAlphaPage as any[]).some((page: any) => page.branches.every((b: any) => ctx.visitedBranchCodes.has(b.BranchCode))),
+    earned: (ctx: BadgeCtx) => branchesByAlphaPage.some(page => page.branches.every(b => ctx.visitedBranchCodes.has(b.BranchCode))),
     suggest: (ctx: BadgeCtx) => {
-      const pages = (branchesByAlphaPage as any[])
-        .map((page: any) => {
-          const visitedCount = page.branches.filter((b: any) => ctx.visitedBranchCodes.has(b.BranchCode)).length
+      const pages = branchesByAlphaPage
+        .map(page => {
+          const visitedCount = page.branches.filter(b => ctx.visitedBranchCodes.has(b.BranchCode)).length
           return { page, visitedCount, pct: visitedCount / page.branches.length }
         })
-        .filter((p: any) => p.pct < 1)
-        .sort((a: any, b: any) => b.pct - a.pct)
+        .filter(p => p.pct < 1)
+        .sort((a, b) => b.pct - a.pct)
       if (!pages.length) return { pct: 1, message: '', branches: [] }
       const best = pages[0]
-      const unvisited = best.page.branches.filter((b: any) => !ctx.visitedBranchCodes.has(b.BranchCode))
+      const unvisited = best.page.branches.filter(b => !ctx.visitedBranchCodes.has(b.BranchCode))
       return {
         pct:      best.pct,
         message:  `Fill the ${best.page.label} page — ${best.visitedCount}/${best.page.branches.length} done`,
@@ -213,11 +236,12 @@ export const BADGES = [
       }
     } },
 
+  // ── Documentation ────────────────────────────────────────────────────────
   { id: 'archivist',     shape: 'star',    title: 'Archivist',     label: '✎',   desc: 'Add a note and photo to any check-in',
     earned:   (ctx: BadgeCtx) => ctx.fullyDocumentedCount >= 1,
     progress: (ctx: BadgeCtx) => ({ current: Math.min(ctx.fullyDocumentedCount, 1), total: 1 }),
     earnedAt: (ctx: BadgeCtx) => {
-      const ci = [...ctx.checkIns].sort((a, b) => a.timestamp.localeCompare(b.timestamp)).find((c: any) => c.note?.trim() && c.hasPhoto)
+      const ci = [...ctx.checkIns].sort((a, b) => a.timestamp.localeCompare(b.timestamp)).find(c => c.note?.trim() && c.hasPhoto)
       return ci ? fmtDate(ci.timestamp) : null
     },
     suggest: () => ({ pct: 0, message: 'Add a note and photo to any check-in', branches: [] }) },
@@ -228,13 +252,14 @@ export const BADGES = [
     earnedAt: (ctx: BadgeCtx) => nthUniqueDate(ctx.checkIns, 25),
     suggest:  (ctx: BadgeCtx) => ({ pct: ctx.visitCount / 25, message: `${25 - ctx.visitCount} more branches to go`, branches: [] }) },
 
+  // ── Geography ────────────────────────────────────────────────────────────
   { id: 'navigator',     shape: 'circle',  title: 'Navigator',                   desc: 'Visit the furthest branch in each direction',
     earned: (ctx: BadgeCtx) => [...compassBranches].every(code => ctx.visitedBranchCodes.has(code)),
     suggest: (ctx: BadgeCtx) => {
       const remaining = Object.values(compassPoints)
         .filter(code => !ctx.visitedBranchCodes.has(code as string))
-        .map(code => (physicalBranches as any[]).find((b: any) => b.BranchCode === code))
-        .filter(Boolean)
+        .map(code => physicalBranches.find(b => b.BranchCode === code))
+        .filter((b): b is Branch => b !== undefined)
       return {
         pct:      (4 - remaining.length) / 4,
         message:  `Visit ${remaining.length} more compass branch${remaining.length === 1 ? '' : 'es'}`,
@@ -242,6 +267,7 @@ export const BADGES = [
       }
     } },
 
+  // ── Loyalty ──────────────────────────────────────────────────────────────
   { id: 'familiar_face', shape: 'star',    title: 'Familiar Face',               desc: 'Check in at your home branch 5 times',
     earned:   (ctx: BadgeCtx) => ctx.homeVisitCount >= 5,
     progress: (ctx: BadgeCtx) => ({ current: ctx.homeVisitCount, total: 5 }),
@@ -255,7 +281,7 @@ export const BADGES = [
       return null
     },
     suggest: (ctx: BadgeCtx) => {
-      const home = (physicalBranches as any[]).find((b: any) => b.BranchCode === ctx.homeBranch)
+      const home = physicalBranches.find(b => b.BranchCode === ctx.homeBranch)
       if (home) {
         const rem = 5 - ctx.homeVisitCount
         return { pct: ctx.homeVisitCount / 5, message: `${rem} more visit${rem === 1 ? '' : 's'} to ${home.BranchName}`, branches: [home] }
@@ -284,20 +310,20 @@ export const BADGES = [
     },
     suggest: (ctx: BadgeCtx) => {
       const best = Object.entries(ctx.branchVisitCounts)
-        .filter(([code, count]) => (count as number) < 3 && code !== ctx.homeBranch)
-        .sort((a, b) => (b[1] as number) - (a[1] as number))[0]
+        .filter(([code, count]) => count < 3 && code !== ctx.homeBranch)
+        .sort((a, b) => b[1] - a[1])[0]
       if (best) {
         const [code, count] = best
-        const branch = (physicalBranches as any[]).find((b: any) => b.BranchCode === code)
+        const branch = physicalBranches.find(b => b.BranchCode === code)
         if (branch) {
-          const rem = 3 - (count as number)
+          const rem = 3 - count
           return { pct: ctx.maxNonHomeVisitCount / 3, message: `${rem} more visit${rem === 1 ? '' : 's'} to ${branch.BranchName}`, branches: [branch] }
         }
       }
       return { pct: 0, message: 'Check in at any branch 3 times', branches: [] }
     } },
 
-  { id: 'complete',      shape: 'octagon', title: 'Full Passport',  label: '100', desc: `Visit all ${(physicalBranches as any[]).length} branches`,
+  { id: 'complete',      shape: 'octagon', title: 'Full Passport',  label: '100', desc: `Visit all ${physicalBranches.length} branches`,
     earned:   (ctx: BadgeCtx) => ctx.visitCount >= 100,
     progress: (ctx: BadgeCtx) => ({ current: ctx.visitCount, total: 100 }),
     earnedAt: (ctx: BadgeCtx) => nthUniqueDate(ctx.checkIns, 100),

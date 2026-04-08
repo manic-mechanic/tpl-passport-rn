@@ -6,9 +6,10 @@ import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
 import { fonts, radius, textSize } from '../theme'
+import type { Branch } from '../types'
 
 function branchNameForCode(code: string): string {
-  return (sortedBranches as any[]).find(b => b.BranchCode === code)?.BranchName ?? ''
+  return sortedBranches.find(b => b.BranchCode === code)?.BranchName ?? ''
 }
 
 export function PassportCard() {
@@ -21,8 +22,8 @@ export function PassportCard() {
   const [showBranchPicker, setShowBranchPicker] = useState(false)
   const [search, setSearch] = useState('')
 
-  const visitCount = new Set((checkIns as any[]).map(c => c.branchCode)).size
-  const progressPct = Math.round((visitCount / (physicalBranches as any[]).length) * 100)
+  const visitCount = new Set(checkIns.map(c => c.branchCode)).size
+  const progressPct = Math.round((visitCount / physicalBranches.length) * 100)
   const issueYear = new Date().getFullYear()
   const avatarLetter = profile.name?.trim() ? profile.name[0].toUpperCase() : '?'
 
@@ -42,11 +43,11 @@ export function PassportCard() {
     return `${num}CAN${dob}M${pct}PCT`
   })()
 
-  const filteredBranches = search.trim()
-    ? (sortedBranches as any[]).filter(b =>
+  const filteredBranches: Branch[] = search.trim()
+    ? sortedBranches.filter(b =>
         b.BranchName.toLowerCase().includes(search.toLowerCase())
       )
-    : sortedBranches as any[]
+    : sortedBranches
 
   return (
     <>
@@ -91,7 +92,7 @@ export function PassportCard() {
 
           <View style={styles.statsRow}>
             <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
-              <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{(checkIns as any[]).length}</Text>
+              <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{checkIns.length}</Text>
               <Text style={[styles.statLabel, { color: theme.textMuted }]}>Visits</Text>
             </View>
             <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
@@ -100,7 +101,7 @@ export function PassportCard() {
             </View>
             <View style={[styles.countChip, { backgroundColor: theme.borderSoft, borderColor: theme.border }]}>
               <Text style={[styles.countChipNum, { color: theme.tplNavy, fontFamily: fonts.display }]}>{visitCount}</Text>
-              <Text style={[styles.countChipDenom, { color: theme.textMuted }]}>/ {(physicalBranches as any[]).length}</Text>
+              <Text style={[styles.countChipDenom, { color: theme.textMuted }]}>/ {physicalBranches.length}</Text>
             </View>
           </View>
         </View>

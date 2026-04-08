@@ -8,6 +8,8 @@ import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
 import { StampShape } from '@/src/components/StampShape'
 import { fonts, textSize } from '@/src/theme'
+import type { Branch } from '@/src/types'
+import type { AlphaPage } from '@/src/composables/useRegion'
 
 export default function PassportScreen() {
   const theme = useTheme()
@@ -18,13 +20,13 @@ export default function PassportScreen() {
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
   const visitCount = useMemo(
-    () => new Set((checkIns as any[]).map(c => c.branchCode)).size,
+    () => new Set(checkIns.map(c => c.branchCode)).size,
     [checkIns]
   )
 
   const flatListRef = useRef<FlatList>(null)
 
-  const pages = branchesByAlphaPage as any[]
+  const pages: AlphaPage[] = branchesByAlphaPage
   const currentPage = pages[activePage]
 
   useEffect(() => {
@@ -32,27 +34,29 @@ export default function PassportScreen() {
   }, [activePage])
 
   function visitDate(branchCode: string) {
-    const ci = (checkIns as any[]).find(c => c.branchCode === branchCode)
+    const ci = checkIns.find(c => c.branchCode === branchCode)
     if (!ci) return ''
     return new Date(ci.timestamp).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
   }
 
-  function isPageComplete(page: any) {
-    return page.branches.every((b: any) => hasVisited(b.BranchCode))
+  function isPageComplete(page: AlphaPage) {
+    return page.branches.every(b => hasVisited(b.BranchCode))
   }
 
-  function openBranch(branch: any) {
+  function openBranch(branch: Branch) {
     router.push(`/branch/${branch.BranchCode}` as any)
   }
 
-  const stampData = useMemo(() => {
+  const stampData = useMemo<(Branch | { BranchCode: string; _phantom: true })[]>(() => {
     const branches = currentPage?.branches ?? []
     return branches.length % 2 !== 0
-      ? [...branches, { BranchCode: '__phantom', _phantom: true }]
+      ? [...branches, { BranchCode: '__phantom', _phantom: true as const }]
       : branches
   }, [currentPage])
 
-  function renderItem({ item, index }: { item: any; index: number }) {
+  type PhantomItem = { BranchCode: string; _phantom: true }
+  type StampItem = Branch | PhantomItem
+  function renderItem({ item, index }: { item: StampItem; index: number }) {
     const isLeftCol = index % 2 === 0
     const borderStyle = {
       borderColor: theme.border,
@@ -60,7 +64,7 @@ export default function PassportScreen() {
       borderRightWidth: isLeftCol ? 1 : 0,
     } as const
 
-    if (item._phantom) {
+    if ('_phantom' in item) {
       return <View style={[styles.stampSlot, borderStyle]} />
     }
 
@@ -97,7 +101,7 @@ export default function PassportScreen() {
         {currentPage?.label}
       </Text>
       <Text style={[styles.pageCount, { color: theme.textMuted }]}>
-        {currentPage?.branches.filter((b: any) => hasVisited(b.BranchCode)).length}
+        {currentPage?.branches.filter(b => hasVisited(b.BranchCode)).length}
         /{currentPage?.branches.length}
       </Text>
     </View>
@@ -117,7 +121,7 @@ export default function PassportScreen() {
         style={[styles.tabNav, { borderBottomColor: theme.borderSoft }]}
         contentContainerStyle={styles.tabNavContent}
       >
-        {pages.map((page: any, i: number) => (
+        {pages.map((page, i) => (
           <TouchableOpacity
             key={page.label}
             onPress={() => setActivePage(i)}
@@ -137,7 +141,7 @@ export default function PassportScreen() {
       <FlatList
         ref={flatListRef}
         data={stampData}
-        keyExtractor={(item: any) => item.BranchCode}
+        keyExtractor={(item) => item.BranchCode}
         numColumns={2}
         renderItem={renderItem}
         style={styles.list}
@@ -160,7 +164,7 @@ export default function PassportScreen() {
         </TouchableOpacity>
 
         <View style={styles.pageNavDots}>
-          {pages.map((_: any, i: number) => (
+          {pages.map((_, i) => (
             <TouchableOpacity key={i} onPress={() => setActivePage(i)} hitSlop={6}>
               <View style={[
                 styles.pageNavDot,

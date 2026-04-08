@@ -17,8 +17,11 @@
 
 ## Up Next
 
-1. **Auth** — BetterAuth client (`better-auth/client`), Google OAuth via `expo-web-browser`, email/password login screen, session in `expo-secure-store`. **Blocked: needs Vercel production URL.**
-2. **Photos** — `expo-image-picker` in check-in flow, upload to Cloudflare R2 via presigned URL. **Blocked: needs R2 bucket config + presigned URL endpoint in web repo.**
+1. **Photos** — `expo-image-picker` in check-in flow, upload to Cloudflare R2 via presigned URL. **Blocked: needs R2 bucket + presigned URL endpoint in `tpl-passport-auth`.**
+
+## Done
+
+- **Auth** — BetterAuth client, email/password + Google OAuth, session stored in `expo-secure-store`, shown in Settings. Auth server at `auth.librarypassport.ca` (`tpl-passport-auth` repo, Cloudflare Workers).
 
 ---
 

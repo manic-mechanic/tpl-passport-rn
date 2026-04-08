@@ -12,8 +12,11 @@ import { usePassportStore } from '@/src/stores/passport'
 import { sortedBranches, haversineKm } from '@/src/composables/useRegion'
 import { StampShape } from '@/src/components/StampShape'
 import { fonts, radius, textSize } from '@/src/theme'
+import type { Branch } from '@/src/types'
 
-const FALLBACK_CODE = 'TRL'
+const FALLBACK_CODE = 'TRL' // shown when GPS is unavailable
+const MAX_CHECKIN_DISTANCE_KM = 0.1 // must be within 100 m to check in
+const LOCATION_TIMEOUT_CODE = 3 // GeolocationPositionError.TIMEOUT
 
 export default function CheckInScreen() {
   const theme = useTheme()
@@ -25,7 +28,7 @@ export default function CheckInScreen() {
   const [noteText, setNoteText] = useState('')
   const [detecting, setDetecting] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
-  const [successBranch, setSuccessBranch] = useState<any>(null)
+  const [successBranch, setSuccessBranch] = useState<Branch | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
 
@@ -33,14 +36,14 @@ export default function CheckInScreen() {
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
   const bypassLocationFence = usePassportStore(s => s.profile.bypassLocationFence)
 
-  const selectedBranch = (sortedBranches as any[]).find(b => b.BranchCode === selectedCode) ?? null
+  const selectedBranch: Branch | null = sortedBranches.find(b => b.BranchCode === selectedCode) ?? null
   const alreadyVisitedToday = selectedBranch ? hasVisitedToday(selectedBranch.BranchCode) : false
 
-  const pickerResults = pickerSearch.trim()
-    ? (sortedBranches as any[]).filter(b =>
+  const pickerResults: Branch[] = pickerSearch.trim()
+    ? sortedBranches.filter(b =>
         b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
       ).slice(0, 8)
-    : (sortedBranches as any[]).slice(0, 8)
+    : sortedBranches.slice(0, 8)
 
   useFocusEffect(
     useCallback(() => {
@@ -71,7 +74,7 @@ export default function CheckInScreen() {
         return
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const nearest = (sortedBranches as any[])
+      const nearest = sortedBranches
         .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
         .sort((a, b) => a.distKm - b.distKm)[0]
       setSelectedCode(nearest.BranchCode)
@@ -97,13 +100,13 @@ export default function CheckInScreen() {
       try {
         const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
         const km = haversineKm(pos.coords.latitude, pos.coords.longitude, selectedBranch.Lat, selectedBranch.Long)
-        if (km > 0.1) {
+        if (km > MAX_CHECKIN_DISTANCE_KM) {
           const dist = km >= 1 ? `${km.toFixed(1)} km` : `${Math.round(km * 1000)} m`
           setLocationError(`You're ${dist} away — you need to be within 100 m to check in.`)
           return
         }
       } catch (err: any) {
-        setLocationError(err?.code === 3 ? 'Location check timed out. Try again.' : 'Location access denied.')
+        setLocationError(err?.code === LOCATION_TIMEOUT_CODE ? 'Location check timed out. Try again.' : 'Location access denied.')
         return
       }
     }
@@ -260,7 +263,7 @@ export default function CheckInScreen() {
             )}
 
             <View style={[styles.pickerList, { borderColor: theme.border }]}>
-              {pickerResults.map((b: any, i: number) => (
+              {pickerResults.map((b, i) => (
                 <TouchableOpacity
                   key={b.BranchCode}
                   style={[

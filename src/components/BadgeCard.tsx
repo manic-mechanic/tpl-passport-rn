@@ -1,19 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
-import { BADGE_COLORS, type BadgeCtx } from '../composables/useBadges'
+import { BADGE_COLORS, type Badge, type BadgeCtx } from '../composables/useBadges'
 import { fonts, radius, textSize } from '../theme'
-
-type Badge = {
-  id: string
-  shape: 'octagon' | 'circle' | 'star'
-  title: string
-  label?: string
-  desc: string
-  earned: (ctx: BadgeCtx) => boolean
-  progress?: (ctx: BadgeCtx) => { current: number; total: number }
-  earnedAt?: (ctx: BadgeCtx) => string | null
-  suggest: (ctx: BadgeCtx) => { pct: number; message: string; branches: any[] }
-}
 
 interface Props {
   badge: Badge

@@ -21,7 +21,7 @@ export default function BranchDetailModal() {
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }
 
-  const branch = (sortedBranches as any[]).find(b => b.BranchCode === currentId) ?? null
+  const branch = sortedBranches.find(b => b.BranchCode === currentId) ?? null
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>

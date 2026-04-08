@@ -2,21 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { physicalBranches } from '../composables/useRegion'
+import type { CheckIn, Profile } from '../types'
 
-interface CheckIn {
-  branchCode: string
-  timestamp: string
-  note: string
-  hasPhoto?: boolean
-}
-
-interface Profile {
-  name: string
-  homeBranch: string
-  theme: 'light' | 'dark' | ''
-  bypassLocationFence: boolean
-  hasSeenOnboarding: boolean
-}
+export type { CheckIn, Profile }
 
 interface PassportStore {
   anonymousId: string

@@ -6,13 +6,16 @@ import { usePassportStore } from '../stores/passport'
 import { physicalBranches, haversineKm, formatDist } from '../composables/useRegion'
 import { StampShape } from './StampShape'
 import { fonts, radius, textSize } from '../theme'
+import type { Branch } from '../types'
 
 const EVENTS_RESOURCE = 'c73bbe54-3a48-4ada-8eef-a1a2864021e4'
 const CKAN = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action'
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
 function filterToWindow(records: any[]) {
   const today    = new Date().toISOString().slice(0, 10)
-  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10)
+  const tomorrow = new Date(Date.now() + MS_PER_DAY).toISOString().slice(0, 10)
   return records
     .filter(e => e.StartDateLocal >= today && e.StartDateLocal <= tomorrow)
     .sort((a, b) => (a.StartDateLocal < b.StartDateLocal ? -1 : 1))
@@ -30,7 +33,10 @@ function EventsSection({ branchName }: { branchName: string }) {
     fetch(url)
       .then(r => r.json())
       .then(data => setEvents(filterToWindow(data.result?.records ?? [])))
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[BranchDetail] Failed to load events:', err)
+        setEvents([])
+      })
       .finally(() => setLoading(false))
   }, [branchName])
 
@@ -68,7 +74,7 @@ const evtStyles = StyleSheet.create({
 })
 
 interface Props {
-  branch: any
+  branch: Branch
   onNearbyPress?: (branchCode: string) => void
 }
 
@@ -81,12 +87,12 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
 
   const visited = hasVisited(branch.BranchCode)
   const visitedToday = hasVisitedToday(branch.BranchCode)
-  const pastVisits = (checkIns as any[]).filter(c => c.branchCode === branch.BranchCode)
+  const pastVisits = checkIns.filter(c => c.branchCode === branch.BranchCode)
   const streetAddress = branch.Address?.split(',')[0] ?? ''
 
   const nearbyBranches = (() => {
     if (!branch.Lat || !branch.Long) return []
-    return (physicalBranches as any[])
+    return physicalBranches
       .filter(b => b.BranchCode !== branch.BranchCode)
       .map(b => ({ ...b, distKm: haversineKm(branch.Lat, branch.Long, b.Lat, b.Long) }))
       .sort((a, b) => a.distKm - b.distKm)
@@ -136,7 +142,7 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
       {pastVisits.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Your visits here</Text>
-          {pastVisits.map((visit: any) => (
+          {pastVisits.map((visit) => (
             <View
               key={visit.timestamp}
               style={[styles.visitRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
@@ -157,7 +163,7 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
       {nearbyBranches.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Nearby branches</Text>
-          {nearbyBranches.map((nb: any) => (
+          {nearbyBranches.map((nb) => (
             <TouchableOpacity
               key={nb.BranchCode}
               style={[styles.nearbyRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}

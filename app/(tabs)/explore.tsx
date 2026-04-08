@@ -12,16 +12,7 @@ import { StampShape } from '@/src/components/StampShape'
 import { BadgeCard } from '@/src/components/BadgeCard'
 import { fonts, radius, textSize } from '@/src/theme'
 import routesData from '@/src/data/routes.json'
-
-interface Route {
-  id: string
-  name: string
-  mode: string
-  area: string
-  duration: string
-  description: string
-  branches: string[]
-}
+import type { Branch, Route } from '@/src/types'
 
 export default function ExploreScreen() {
   const theme = useTheme()
@@ -30,7 +21,7 @@ export default function ExploreScreen() {
   const badgeCtx = useBadgeCtx()
   const hasVisited = usePassportStore(s => s.hasVisited)
 
-  const [nearBy, setNearBy] = useState<any[]>([])
+  const [nearBy, setNearBy] = useState<(Branch & { distKm: number })[]>([])
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
@@ -46,7 +37,7 @@ export default function ExploreScreen() {
         return
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const sorted = (sortedBranches as any[])
+      const sorted = sortedBranches
         .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
         .sort((a, b) => a.distKm - b.distKm)
         .slice(0, 6)
@@ -58,7 +49,7 @@ export default function ExploreScreen() {
     }
   }
 
-  const routes = routesData as Route[]
+  const routes: Route[] = routesData as Route[]
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -95,7 +86,7 @@ export default function ExploreScreen() {
             </View>
           ) : (
             <View style={[styles.nearList, { borderColor: theme.border }]}>
-              {nearBy.map((branch: any, i: number) => (
+              {nearBy.map((branch, i) => (
                 <TouchableOpacity
                   key={branch.BranchCode}
                   style={[
@@ -132,8 +123,8 @@ export default function ExploreScreen() {
           </Text>
           {routes.map((route: Route) => {
             const routeBranches = route.branches
-              .map(code => (sortedBranches as any[]).find((b: any) => b.BranchCode === code))
-              .filter(Boolean)
+              .map(code => sortedBranches.find(b => b.BranchCode === code))
+              .filter((b): b is Branch => b !== undefined)
             return (
               <View key={route.id} style={[styles.routeCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                 <View style={styles.routeMeta}>
@@ -155,7 +146,7 @@ export default function ExploreScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.routeStamps}
                 >
-                  {routeBranches.map((branch: any) => (
+                  {routeBranches.map((branch) => (
                     <TouchableOpacity
                       key={branch.BranchCode}
                       onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
@@ -183,7 +174,7 @@ export default function ExploreScreen() {
           <View style={styles.badgeGrid}>
             {BADGES.map(badge => (
               <View key={badge.id} style={styles.badgeCell}>
-                <BadgeCard badge={badge as any} ctx={badgeCtx} />
+                <BadgeCard badge={badge} ctx={badgeCtx} />
               </View>
             ))}
           </View>

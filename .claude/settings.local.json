@@ -11,7 +11,10 @@
       "Bash(find /Users/benny/Documents/repos/tpl-passport-rn -name *badge* -o -name *Badge*)",
       "WebFetch(domain:better-auth.com)",
       "WebFetch(domain:mcp.better-auth.com)",
-      "WebFetch(domain:www.better-auth.com)"
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(find /Users/benny/Documents/repos/tpl-passport-rn -maxdepth 2 -not -path */node_modules/* -not -path */.git/*)",
+      "Bash(ls \"app/\\(tabs\\)/two.tsx\")",
+      "Bash(npx tsc:*)"
     ]
   }
 }

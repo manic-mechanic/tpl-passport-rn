@@ -1,8 +1,10 @@
 // Shared branch data, district metadata, and geo utilities.
 
 import branchData from '../data/branch-info.json'
-export const physicalBranches = branchData.filter(b => b.PhysicalBranch === 1)
-export const sortedBranches = [...physicalBranches].sort((a, b) => a.BranchName.localeCompare(b.BranchName))
+import type { Branch } from '../types'
+
+export const physicalBranches: Branch[] = (branchData as Branch[]).filter(b => b.PhysicalBranch === 1)
+export const sortedBranches: Branch[] = [...physicalBranches].sort((a, b) => a.BranchName.localeCompare(b.BranchName))
 
 export const DISTRICT_ORDER = [
   'Etobicoke-York',
@@ -11,14 +13,14 @@ export const DISTRICT_ORDER = [
   'Scarborough',
 ]
 
-const DISTRICT_COLORS = {
+const DISTRICT_COLORS: Record<string, string> = {
   'Etobicoke-York': '#c06b30',
   'North York': '#7b50c8',
   'Toronto-East York': '#1a80a0',
   'Scarborough': '#b84040',
 }
 
-export function getDistrictColor(district) {
+export function getDistrictColor(district: string): string {
   return DISTRICT_COLORS[district] ?? '#8c849e'
 }
 
@@ -31,7 +33,9 @@ export const ALPHA_PAGES = [
   { label: 'S – Z', from: 'S', to: 'Z' },
 ]
 
-export const branchesByAlphaPage = ALPHA_PAGES.map(page => ({
+export type AlphaPage = (typeof ALPHA_PAGES)[number] & { branches: Branch[] }
+
+export const branchesByAlphaPage: AlphaPage[] = ALPHA_PAGES.map(page => ({
   ...page,
   branches: sortedBranches.filter(b => {
     const c = b.BranchName[0].toUpperCase()
@@ -39,19 +43,24 @@ export const branchesByAlphaPage = ALPHA_PAGES.map(page => ({
   }),
 }))
 
-export function haversineKm(lat1, lng1, lat2, lng2) {
+// Accepts string or number coords — branch JSON stores Lat/Long as strings,
+// expo-location returns numbers.
+export function haversineKm(
+  lat1: number | string, lng1: number | string,
+  lat2: number | string, lng2: number | string,
+): number {
   const R = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
+  const dLat = (+lat2 - +lat1) * Math.PI / 180
+  const dLng = (+lng2 - +lng1) * Math.PI / 180
   const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+    Math.cos(+lat1 * Math.PI / 180) * Math.cos(+lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-export function formatDist(km) {
+export function formatDist(km: number): string {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`
 }
 
-export function buildMapsUrl(branches) {
+export function buildMapsUrl(branches: Branch[]): string {
   return 'https://www.google.com/maps/dir/' + branches.map(b => `${b.Lat},${b.Long}`).join('/')
 }

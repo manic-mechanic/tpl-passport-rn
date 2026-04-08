@@ -5,6 +5,7 @@ import { usePassportStore } from '../stores/passport'
 import { physicalBranches } from '../composables/useRegion'
 import { StampShape } from './StampShape'
 import { fonts, textSize } from '../theme'
+import type { Branch } from '../types'
 
 function DashedSeparator({ color }: { color: string }) {
   return (
@@ -29,11 +30,11 @@ export function RecentVisits() {
 
   const recentBranches = (() => {
     const seen = new Set<string>()
-    const result: any[] = []
-    for (const ci of checkIns as any[]) {
+    const result: Branch[] = []
+    for (const ci of checkIns) {
       if (seen.has(ci.branchCode)) continue
       seen.add(ci.branchCode)
-      const branch = (physicalBranches as any[]).find(b => b.BranchCode === ci.branchCode)
+      const branch = physicalBranches.find(b => b.BranchCode === ci.branchCode)
       if (branch) result.push(branch)
       if (result.length >= 3) break
     }
@@ -56,10 +57,13 @@ export function RecentVisits() {
       </View>
 
       <View style={styles.stampStrip}>
-        {[...recentBranches, ...Array.from({ length: placeholderCount }).map((_, i) => ({ _ghost: true, _idx: i }))].map((item: any, i: number) => (
-          <View key={item._ghost ? `empty-${item._idx}` : item.BranchCode} style={styles.stampSlotWrapper}>
+        {([
+          ...recentBranches,
+          ...Array.from({ length: placeholderCount }).map((_, i) => ({ _ghost: true as const, _idx: i })),
+        ] as Array<Branch | { _ghost: true; _idx: number }>).map((item, i) => (
+          <View key={'_ghost' in item ? `empty-${item._idx}` : item.BranchCode} style={styles.stampSlotWrapper}>
             {i > 0 && <DashedSeparator color={theme.border} />}
-            {item._ghost ? (
+            {'_ghost' in item ? (
               <View style={styles.stampSlot}>
                 <View style={styles.stampArea}>
                   <View style={{ opacity: 0.12 }}>
