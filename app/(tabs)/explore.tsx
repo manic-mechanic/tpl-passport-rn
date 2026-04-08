@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
+import { usePassportStore } from '@/src/stores/passport'
 import { sortedBranches, haversineKm } from '@/src/composables/useRegion'
 import { useBadgeCtx, BADGES } from '@/src/composables/useBadges'
 import { StampShape } from '@/src/components/StampShape'
@@ -27,6 +28,7 @@ export default function ExploreScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const badgeCtx = useBadgeCtx()
+  const hasVisited = usePassportStore(s => s.hasVisited)
 
   const [nearBy, setNearBy] = useState<any[]>([])
   const [locationLoading, setLocationLoading] = useState(false)
@@ -103,7 +105,7 @@ export default function ExploreScreen() {
                   ]}
                   onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
                 >
-                  <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={38} />
+                  <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={38} ghost={!hasVisited(branch.BranchCode)} />
                   <View style={styles.nearInfo}>
                     <Text style={[styles.nearName, { color: theme.textPrimary }]} numberOfLines={1}>
                       {branch.BranchName}
@@ -159,7 +161,7 @@ export default function ExploreScreen() {
                       onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
                       style={styles.routeStampItem}
                     >
-                      <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={44} />
+                      <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={44} ghost={!hasVisited(branch.BranchCode)} />
                       <Text style={[styles.routeStampLabel, { color: theme.textMuted }]} numberOfLines={1}>
                         {branch.BranchName.replace(/ Branch$/, '')}
                       </Text>

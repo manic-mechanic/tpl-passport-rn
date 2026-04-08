@@ -18,9 +18,14 @@ export function StampShape({ branchCode, wardNo, size, hideCode, ghost }: Props)
   const opacity = getStampOpacity(branchCode)
   const { color, bg, border } = ghost ? GHOST_COLORS : getStampColor(wardNo)
 
-  const w = size ?? parseInt(shape.width)
-  const h = size ?? parseInt(shape.height)
-  const br = size ? size / 2 : parseInt(shape.borderRadius)
+  const shapeW = parseInt(shape.width)
+  const shapeH = parseInt(shape.height)
+  const scale = size != null ? size / Math.max(shapeW, shapeH) : 1
+  const w = Math.round(shapeW * scale)
+  const h = Math.round(shapeH * scale)
+  const isPercent = shape.borderRadius.includes('%')
+  const rawBr = isPercent ? Math.min(w, h) / 2 : Math.round(parseInt(shape.borderRadius) * scale)
+  const br = Math.min(rawBr, Math.min(w, h) / 2)
   const fontSize = Math.round(Math.min(w, h) * 0.30)
 
   return (
