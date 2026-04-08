@@ -1,8 +1,12 @@
 import * as FileSystem from 'expo-file-system/legacy'
-import { authClient } from './auth-client'
+import * as SecureStore from 'expo-secure-store'
+import { getCookie } from '@better-auth/expo/client'
 import type { CheckIn } from '../types'
 
 const PHOTOS_DIR = `${FileSystem.documentDirectory}checkin-photos/`
+// Key used by @better-auth/expo to store session cookies (storagePrefix + '_cookie')
+const SESSION_COOKIE_KEY = 'tplpassport_cookie'
+const UPLOAD_URL = 'https://auth.librarypassport.ca/api/upload/photo?ext=jpg'
 
 async function ensurePhotosDir() {
   const info = await FileSystem.getInfoAsync(PHOTOS_DIR)
@@ -20,24 +24,25 @@ export async function saveLocalPhoto(sourceUri: string, timestamp: string): Prom
   return dest
 }
 
-// Upload a photo directly to R2 via our server (which uses the R2 binding).
-// Avoids presigned URL signing complexity — auth is handled by authClient.$fetch.
+// Upload a photo to R2 via our server using the BetterAuth session cookie.
+// Uses FileSystem.uploadAsync for a native binary upload — no base64 encoding.
 export async function uploadPhotoToR2(localUri: string): Promise<string> {
-  const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+  const stored = await SecureStore.getItemAsync(SESSION_COOKIE_KEY)
+  const cookie = getCookie(stored ?? '{}')
+  if (!cookie) throw new Error('No active session')
+
+  const result = await FileSystem.uploadAsync(UPLOAD_URL, localUri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    headers: { cookie, 'content-type': 'image/jpeg' },
   })
 
-  const { data, error } = await (authClient as any).$fetch<{ publicUrl: string }>(
-    'https://auth.librarypassport.ca/api/upload/photo?ext=jpg',
-    {
-      method: 'POST',
-      body: JSON.stringify({ data: base64 }),
-      headers: { 'Content-Type': 'application/json' },
-    }
-  )
-  if (error || !data?.publicUrl) throw new Error(`Upload failed: ${JSON.stringify(error)}`)
+  if (result.status !== 200 && result.status !== 201) {
+    throw new Error(`Upload failed: ${result.status} ${result.body}`)
+  }
 
-  return data.publicUrl
+  const { publicUrl } = JSON.parse(result.body)
+  return publicUrl
 }
 
 // Migrate any locally-stored photos to R2 after the user signs in.
