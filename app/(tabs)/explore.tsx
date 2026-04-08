@@ -161,7 +161,9 @@ export default function ExploreScreen() {
                       onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
                       style={styles.routeStampItem}
                     >
-                      <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={44} ghost={!hasVisited(branch.BranchCode)} />
+                      <View style={styles.routeStampArea}>
+                        <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={44} ghost={!hasVisited(branch.BranchCode)} />
+                      </View>
                       <Text style={[styles.routeStampLabel, { color: theme.textMuted }]} numberOfLines={1}>
                         {branch.BranchName.replace(/ Branch$/, '')}
                       </Text>
@@ -268,6 +270,7 @@ const styles = StyleSheet.create({
   routeDesc: { fontSize: textSize.sm, lineHeight: 18 },
   routeStamps: { gap: 10, paddingTop: 4, paddingBottom: 2 },
   routeStampItem: { alignItems: 'center', gap: 4, width: 60 },
+  routeStampArea: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   routeStampLabel: { fontSize: 10, textAlign: 'center', lineHeight: 13 },
   // Badges
   badgeGrid: {

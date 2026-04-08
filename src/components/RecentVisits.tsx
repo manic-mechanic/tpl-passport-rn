@@ -6,6 +6,19 @@ import { physicalBranches } from '../composables/useRegion'
 import { StampShape } from './StampShape'
 import { fonts, textSize } from '../theme'
 
+function DashedSeparator({ color }: { color: string }) {
+  return (
+    <View style={{ width: 1, height: 72, alignSelf: 'center', overflow: 'hidden' }}>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <View
+          key={i}
+          style={{ width: 1, height: 4, backgroundColor: i % 2 === 0 ? color : 'transparent', marginBottom: 2 }}
+        />
+      ))}
+    </View>
+  )
+}
+
 const GHOST_CODES = ['GH4', 'GH5', 'GH1']
 const GHOST_WARDS = [5, 9, 3]
 
@@ -44,38 +57,35 @@ export function RecentVisits() {
 
       <View style={styles.stampStrip}>
         {[...recentBranches, ...Array.from({ length: placeholderCount }).map((_, i) => ({ _ghost: true, _idx: i }))].map((item: any, i: number) => (
-          item._ghost ? (
-            <View
-              key={`empty-${item._idx}`}
-              style={[
-                styles.stampSlot,
-                i < 2 && { borderRightWidth: 1, borderRightColor: theme.border, borderStyle: 'dashed' as const },
-              ]}
-            >
-              <View style={{ opacity: 0.12 }}>
-                <StampShape
-                  branchCode={GHOST_CODES[item._idx % GHOST_CODES.length]}
-                  wardNo={GHOST_WARDS[item._idx % GHOST_WARDS.length]}
-                  size={62}
-                  hideCode
-                />
+          <View key={item._ghost ? `empty-${item._idx}` : item.BranchCode} style={styles.stampSlotWrapper}>
+            {i > 0 && <DashedSeparator color={theme.border} />}
+            {item._ghost ? (
+              <View style={styles.stampSlot}>
+                <View style={styles.stampArea}>
+                  <View style={{ opacity: 0.12 }}>
+                    <StampShape
+                      branchCode={GHOST_CODES[item._idx % GHOST_CODES.length]}
+                      wardNo={GHOST_WARDS[item._idx % GHOST_WARDS.length]}
+                      size={62}
+                      hideCode
+                    />
+                  </View>
+                </View>
               </View>
-            </View>
-          ) : (
-            <TouchableOpacity
-              key={item.BranchCode}
-              style={[
-                styles.stampSlot,
-                i < 2 && { borderRightWidth: 1, borderRightColor: theme.border, borderStyle: 'dashed' as const },
-              ]}
-              onPress={() => router.push(`/branch/${item.BranchCode}` as any)}
-            >
-              <StampShape branchCode={item.BranchCode} wardNo={item.WardNo} size={62} />
-              <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={2}>
-                {item.BranchName}
-              </Text>
-            </TouchableOpacity>
-          )
+            ) : (
+              <TouchableOpacity
+                style={styles.stampSlot}
+                onPress={() => router.push(`/branch/${item.BranchCode}` as any)}
+              >
+                <View style={styles.stampArea}>
+                  <StampShape branchCode={item.BranchCode} wardNo={item.WardNo} size={62} />
+                </View>
+                <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
+                  {item.BranchName}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         ))}
       </View>
 
@@ -106,6 +116,10 @@ const styles = StyleSheet.create({
   stampStrip: {
     flexDirection: 'row',
   },
+  stampSlotWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   stampSlot: {
     flex: 1,
     alignItems: 'center',
@@ -115,7 +129,12 @@ const styles = StyleSheet.create({
     minHeight: 110,
     gap: 8,
   },
-  stampSlotEmpty: {},
+  stampArea: {
+    width: 62,
+    height: 62,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stampLabel: {
     fontSize: textSize.sm,
     fontWeight: '500',

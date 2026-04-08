@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   nameInput: {
     fontSize: textSize.xl,
     fontWeight: '700',
-    lineHeight: 26,
+    height: 30,
     borderBottomWidth: 1.5,
     paddingBottom: 2,
     paddingTop: 0,

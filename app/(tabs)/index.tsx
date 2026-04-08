@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
 import { PassportCard } from '@/src/components/PassportCard'
@@ -17,14 +17,20 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <ScrollView
+      <KeyboardAvoidingView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={insets.top + 44}
       >
-        <PassportCard />
-        <RecentVisits />
-      </ScrollView>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <PassportCard />
+          <RecentVisits />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   )
 }
