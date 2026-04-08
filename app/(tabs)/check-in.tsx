@@ -157,7 +157,7 @@ export default function CheckInScreen() {
         style={[styles.scroll, { backgroundColor: theme.bg }]}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: 16, paddingBottom: insets.bottom + 24 },
+          { paddingTop: 20, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

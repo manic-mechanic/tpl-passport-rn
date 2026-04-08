@@ -150,7 +150,7 @@ export default function PassportScreen() {
         stickyHeaderIndices={[0]}
       />
 
-      <View style={[styles.pageNav, { backgroundColor: theme.bg, borderTopColor: theme.border, paddingBottom: insets.bottom + 8 }]}>
+      <View style={[styles.pageNav, { backgroundColor: theme.bg, borderTopColor: theme.border, paddingBottom: 12 }]}>
         <TouchableOpacity
           onPress={() => setActivePage(p => p - 1)}
           disabled={activePage === 0}
@@ -217,6 +217,7 @@ const styles = StyleSheet.create({
   tabNav: {
     flexGrow: 0,
     borderBottomWidth: 2,
+    paddingTop: 8,
   },
   tabNavContent: {
     paddingHorizontal: 18,

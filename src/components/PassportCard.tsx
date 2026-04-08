@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, Modal, FlatList, TouchableOpacity, SafeAreaView } from 'react-native'
+import { View, Text, TextInput, StyleSheet, Modal, FlatList, TouchableOpacity } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
@@ -12,6 +13,7 @@ function branchNameForCode(code: string): string {
 
 export function PassportCard() {
   const theme = useTheme()
+  const insets = useSafeAreaInsets()
   const profile = usePassportStore(s => s.profile)
   const checkIns = usePassportStore(s => s.checkIns)
   const updateProfile = usePassportStore(s => s.updateProfile)
@@ -117,7 +119,7 @@ export function PassportCard() {
 
       <Modal visible={showBranchPicker} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <SafeAreaView style={[styles.modalCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.modalCard, { backgroundColor: theme.surface, paddingBottom: insets.bottom }]}>
             <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
               <Text style={[styles.modalTitle, { color: theme.textPrimary, fontFamily: fonts.display }]}>
                 Home Branch
@@ -165,7 +167,7 @@ export function PassportCard() {
                 )
               }}
             />
-          </SafeAreaView>
+          </View>
         </View>
       </Modal>
     </>
