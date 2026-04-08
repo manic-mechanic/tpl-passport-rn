@@ -11,6 +11,7 @@
 - Tab screens stay mounted — use `useFocusEffect` not `useEffect([], [])`
 - Tab bar handles bottom safe area — don't add `insets.bottom` to elements directly above it
 - `StampShape` size prop scales proportionally from shape's natural dimensions; `borderRadius` scales with it
+- Branch detail is a single modal route (`app/branch/[id].tsx`). Nearby branch taps swap the branch in local state (`setCurrentId`) — do not use `router.push/replace` or modals will stack
 
 ---
 

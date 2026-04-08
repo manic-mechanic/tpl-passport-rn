@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
+import { authClient } from '@/src/lib/auth-client'
 import { fonts, radius, textSize } from '@/src/theme'
 
 const THEME_OPTIONS = [
@@ -13,8 +15,10 @@ const THEME_OPTIONS = [
 export default function SettingsScreen() {
   const theme = useTheme()
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const profile = usePassportStore(s => s.profile)
   const updateProfile = usePassportStore(s => s.updateProfile)
+  const { data: session } = authClient.useSession()
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -33,15 +37,36 @@ export default function SettingsScreen() {
       <View style={styles.group}>
         <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Account</Text>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          <View style={styles.settingRow}>
-            <View style={styles.labelWrap}>
-              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
-              <Text style={[styles.settingHint, { color: theme.textMuted }]}>
-                Access your passport on any device
-              </Text>
-            </View>
-            <Text style={[styles.signInLink, { color: theme.tplBlue }]}>Sign in →</Text>
-          </View>
+          {session?.user ? (
+            <>
+              <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
+                <View style={styles.labelWrap}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>
+                    {session.user.name || session.user.email}
+                  </Text>
+                  {session.user.name ? (
+                    <Text style={[styles.settingHint, { color: theme.textMuted }]}>{session.user.email}</Text>
+                  ) : null}
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={() => authClient.signOut()}
+              >
+                <Text style={[styles.signInLink, { color: '#c0392b' }]}>Sign out</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/sign-in' as any)}>
+              <View style={styles.labelWrap}>
+                <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
+                <Text style={[styles.settingHint, { color: theme.textMuted }]}>
+                  Access your passport on any device
+                </Text>
+              </View>
+              <Text style={[styles.signInLink, { color: theme.tplBlue }]}>Sign in →</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
