@@ -1,26 +1,20 @@
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
 import { useTheme } from '@/src/hooks/useTheme'
 import { PassportCard } from '@/src/components/PassportCard'
 import { RecentVisits } from '@/src/components/RecentVisits'
 import { fonts, textSize } from '@/src/theme'
-import Ionicons from '@expo/vector-icons/Ionicons'
 
 export default function HomeScreen() {
   const theme = useTheme()
   const insets = useSafeAreaInsets()
-  const router = useRouter()
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.tplNavy, paddingTop: insets.top + 10 }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.tplNavy, paddingTop: insets.top + 12 }]}>
         <Text style={[styles.wordmark, { fontFamily: fonts.display }]}>
           passport<Text style={styles.wordmarkColon}>:</Text>
         </Text>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/settings')} hitSlop={8}>
-          <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -38,27 +32,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 14,
   },
   wordmark: {
-    flex: 1,
-    fontSize: textSize.xl,
+    fontSize: textSize.xxxl,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: -0.4,
-    lineHeight: 24,
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: -0.5,
   },
   wordmarkColon: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.5)',
   },
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: 18,
-    paddingTop: 18,
-    gap: 18,
+    paddingTop: 20,
+    gap: 22,
   },
 })

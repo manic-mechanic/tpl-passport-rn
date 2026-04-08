@@ -1,7 +1,8 @@
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useState, useMemo, useEffect } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
@@ -23,10 +24,15 @@ export default function PassportScreen() {
   )
 
   const bottomSheetRef = useRef<BottomSheetModal>(null)
+  const flatListRef = useRef<FlatList>(null)
   const snapPoints = useMemo(() => ['60%', '92%'], [])
 
   const pages = branchesByAlphaPage as any[]
   const currentPage = pages[activePage]
+
+  useEffect(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false })
+  }, [activePage])
 
   function visitDate(branchCode: string) {
     const ci = (checkIns as any[]).find(c => c.branchCode === branchCode)
@@ -50,18 +56,30 @@ export default function PassportScreen() {
       : branches
   }, [currentPage])
 
-  function renderItem({ item }: { item: any }) {
-    if (item._phantom) return <View style={styles.stampSlot} />
+  function renderItem({ item, index }: { item: any; index: number }) {
+    const isLeftCol = index % 2 === 0
+    const borderStyle = {
+      borderColor: theme.border,
+      borderBottomWidth: 1,
+      borderRightWidth: isLeftCol ? 1 : 0,
+    } as const
+
+    if (item._phantom) {
+      return <View style={[styles.stampSlot, borderStyle]} />
+    }
+
     const visited = hasVisited(item.BranchCode)
     return (
       <TouchableOpacity
-        style={[styles.stampSlot, { borderBottomColor: theme.border }]}
+        style={[styles.stampSlot, borderStyle]}
         onPress={() => openBranch(item)}
         activeOpacity={0.7}
       >
-        <View style={visited ? undefined : styles.stampGhost}>
-          <StampShape branchCode={item.BranchCode} wardNo={item.WardNo} />
-        </View>
+        <StampShape
+          branchCode={item.BranchCode}
+          wardNo={item.WardNo}
+          ghost={!visited}
+        />
         <Text
           style={[styles.stampName, { color: visited ? theme.textPrimary : theme.textMuted }]}
           numberOfLines={2}
@@ -78,7 +96,7 @@ export default function PassportScreen() {
   }
 
   const ListHeader = (
-    <View style={[styles.pageHeaderRow, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
+    <View style={[styles.pageHeaderRow, { backgroundColor: theme.bg, borderBottomColor: theme.border, borderBottomWidth: 1, borderStyle: 'dashed' }]}>
       <Text style={[styles.pageRange, { color: theme.tplNavy, fontFamily: fonts.display }]}>
         {currentPage?.label}
       </Text>
@@ -124,15 +142,53 @@ export default function PassportScreen() {
       </ScrollView>
 
       <FlatList
+        ref={flatListRef}
         data={stampData}
         keyExtractor={(item: any) => item.BranchCode}
         numColumns={2}
         renderItem={renderItem}
         style={styles.list}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingBottom: 8 }}
         ListHeaderComponent={ListHeader}
         stickyHeaderIndices={[0]}
       />
+
+      <View style={[styles.pageNav, { backgroundColor: theme.bg, borderTopColor: theme.border, paddingBottom: insets.bottom + 8 }]}>
+        <TouchableOpacity
+          onPress={() => setActivePage(p => p - 1)}
+          disabled={activePage === 0}
+          style={styles.pageNavBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={20} color={activePage === 0 ? theme.textMuted : theme.tplNavy} />
+          <Text style={[styles.pageNavLabel, { color: activePage === 0 ? theme.textMuted : theme.tplNavy }]}>
+            Prev
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.pageNavDots}>
+          {pages.map((_: any, i: number) => (
+            <TouchableOpacity key={i} onPress={() => setActivePage(i)} hitSlop={6}>
+              <View style={[
+                styles.pageNavDot,
+                { backgroundColor: i === activePage ? theme.tplNavy : theme.borderSoft },
+              ]} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setActivePage(p => p + 1)}
+          disabled={activePage === pages.length - 1}
+          style={styles.pageNavBtn}
+          hitSlop={8}
+        >
+          <Text style={[styles.pageNavLabel, { color: activePage === pages.length - 1 ? theme.textMuted : theme.tplNavy }]}>
+            Next
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color={activePage === pages.length - 1 ? theme.textMuted : theme.tplNavy} />
+        </TouchableOpacity>
+      </View>
 
       <BottomSheetModal
         ref={bottomSheetRef}
@@ -189,7 +245,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 18,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   pageRange: {
     fontSize: textSize.base,
@@ -208,11 +263,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 12,
     minHeight: 140,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  stampGhost: {
-    opacity: 0.13,
+    borderStyle: 'dashed',
   },
   stampName: {
     fontSize: textSize.sm,
@@ -223,5 +274,34 @@ const styles = StyleSheet.create({
   stampDate: {
     fontSize: textSize.xs,
     fontWeight: '500',
+  },
+  // Bottom page navigation
+  pageNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  pageNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minWidth: 70,
+  },
+  pageNavLabel: {
+    fontSize: textSize.md,
+    fontWeight: '600',
+  },
+  pageNavDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageNavDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 })

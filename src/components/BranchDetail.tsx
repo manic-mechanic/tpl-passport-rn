@@ -1,10 +1,71 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches, haversineKm, formatDist } from '../composables/useRegion'
 import { StampShape } from './StampShape'
 import { fonts, radius, textSize } from '../theme'
+
+const EVENTS_RESOURCE = 'c73bbe54-3a48-4ada-8eef-a1a2864021e4'
+const CKAN = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action'
+
+function filterToWindow(records: any[]) {
+  const today    = new Date().toISOString().slice(0, 10)
+  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10)
+  return records
+    .filter(e => e.StartDateLocal >= today && e.StartDateLocal <= tomorrow)
+    .sort((a, b) => (a.StartDateLocal < b.StartDateLocal ? -1 : 1))
+}
+
+function EventsSection({ branchName }: { branchName: string }) {
+  const theme = useTheme()
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const shortName = branchName.replace(/ Branch$/i, '')
+    const filters = JSON.stringify({ LocationName: shortName })
+    const url = `${CKAN}/datastore_search?id=${EVENTS_RESOURCE}&filters=${encodeURIComponent(filters)}&limit=100&sort=StartDateLocal%20desc`
+    fetch(url)
+      .then(r => r.json())
+      .then(data => setEvents(filterToWindow(data.result?.records ?? [])))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [branchName])
+
+  if (loading) return <ActivityIndicator color={theme.tplBlue} style={{ marginVertical: 8 }} />
+  if (events.length === 0) return null
+
+  return (
+    <View style={evtStyles.section}>
+      <Text style={[evtStyles.heading, { color: theme.textPrimary }]}>Events Today & Tomorrow</Text>
+      {events.map((e: any) => {
+        const name = e.EventName ?? e['Event Name'] ?? e.Title ?? 'Event'
+        const time = e.StartTime ? ` · ${e.StartTime}` : ''
+        const age  = e.AgeGroup ?? e['Age Group'] ?? ''
+        return (
+          <View key={e._id} style={[evtStyles.row, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+            <Text style={[evtStyles.eventName, { color: theme.textPrimary }]} numberOfLines={2}>{name}</Text>
+            <Text style={[evtStyles.eventMeta, { color: theme.textMuted }]}>
+              {e.StartDateLocal === new Date().toISOString().slice(0, 10) ? 'Today' : 'Tomorrow'}{time}{age ? ` · ${age}` : ''}
+            </Text>
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+const evtStyles = StyleSheet.create({
+  section: { marginBottom: 24 },
+  heading: { fontSize: textSize.base, fontWeight: '600', marginBottom: 12 },
+  row: {
+    padding: 10, borderRadius: radius.sm, borderWidth: 1, marginBottom: 6, gap: 3,
+  },
+  eventName: { fontSize: textSize.md, fontWeight: '600', lineHeight: 18 },
+  eventMeta: { fontSize: textSize.sm },
+})
 
 interface Props {
   branch: any
@@ -40,9 +101,7 @@ export function BranchDetail({ branch }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
-        <View style={visited ? undefined : styles.ghostStamp}>
-          <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={72} />
-        </View>
+        <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={72} ghost={!visited} />
         <View style={styles.titleArea}>
           <Text style={[styles.branchName, { color: theme.textPrimary, fontFamily: fonts.display }]}>
             {branch.BranchName}
@@ -92,6 +151,8 @@ export function BranchDetail({ branch }: Props) {
         </View>
       )}
 
+      <EventsSection branchName={branch.BranchName} />
+
       {nearbyBranches.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Nearby branches</Text>
@@ -121,10 +182,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     paddingBottom: 14,
-  },
-  ghostStamp: {
-    opacity: 0.13,
-    flexShrink: 0,
   },
   titleArea: {
     flex: 1,

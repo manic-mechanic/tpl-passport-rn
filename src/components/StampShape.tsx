@@ -5,14 +5,18 @@ interface Props {
   branchCode: string
   wardNo: number | string
   size?: number
+  hideCode?: boolean
+  ghost?: boolean
 }
 
-export function StampShape({ branchCode, wardNo, size }: Props) {
+const GHOST_COLORS = { color: '#b0b0b0', bg: '#f0f0f0', border: '#cccccc' }
+
+export function StampShape({ branchCode, wardNo, size, hideCode, ghost }: Props) {
   const shape = getStampShape(branchCode)
   const font = getStampFont(branchCode)   // returns font name string
   const rotation = getStampRotation(branchCode)
   const opacity = getStampOpacity(branchCode)
-  const { color, bg, border } = getStampColor(wardNo)
+  const { color, bg, border } = ghost ? GHOST_COLORS : getStampColor(wardNo)
 
   const w = size ?? parseInt(shape.width)
   const h = size ?? parseInt(shape.height)
@@ -28,9 +32,11 @@ export function StampShape({ branchCode, wardNo, size }: Props) {
       }
     ]}>
       <View style={[styles.ring, { borderRadius: br - 6, borderColor: color, opacity: 0.22 }]} />
-      <Text style={[styles.code, { color, fontFamily: font, fontSize, opacity }]}>
-        {branchCode}
-      </Text>
+      {!hideCode && (
+        <Text style={[styles.code, { color, fontFamily: font, fontSize, opacity }]}>
+          {branchCode}
+        </Text>
+      )}
     </View>
   )
 }

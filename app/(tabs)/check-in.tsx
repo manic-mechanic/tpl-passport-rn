@@ -6,6 +6,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { sortedBranches, haversineKm } from '@/src/composables/useRegion'
@@ -25,6 +26,8 @@ export default function CheckInScreen() {
   const [detecting, setDetecting] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [successBranch, setSuccessBranch] = useState<any>(null)
+  const [showPicker, setShowPicker] = useState(false)
+  const [pickerSearch, setPickerSearch] = useState('')
 
   const checkIn = usePassportStore(s => s.checkIn)
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
@@ -33,11 +36,19 @@ export default function CheckInScreen() {
   const selectedBranch = (sortedBranches as any[]).find(b => b.BranchCode === selectedCode) ?? null
   const alreadyVisitedToday = selectedBranch ? hasVisitedToday(selectedBranch.BranchCode) : false
 
+  const pickerResults = pickerSearch.trim()
+    ? (sortedBranches as any[]).filter(b =>
+        b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
+      ).slice(0, 8)
+    : (sortedBranches as any[]).slice(0, 8)
+
   useFocusEffect(
     useCallback(() => {
       setNoteText('')
       setLocationError(null)
       setSuccessBranch(null)
+      setShowPicker(false)
+      setPickerSearch('')
       if (prefillCode) {
         setSelectedCode(prefillCode)
         setDetecting(false)
@@ -51,6 +62,7 @@ export default function CheckInScreen() {
   async function detectNearest() {
     setDetecting(true)
     setLocationError(null)
+    setShowPicker(false)
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
@@ -69,6 +81,13 @@ export default function CheckInScreen() {
     } finally {
       setDetecting(false)
     }
+  }
+
+  function pickBranch(code: string) {
+    setSelectedCode(code)
+    setShowPicker(false)
+    setPickerSearch('')
+    setLocationError(null)
   }
 
   async function doCheckIn() {
@@ -153,7 +172,7 @@ export default function CheckInScreen() {
           <View style={styles.detectingWrap}>
             <ActivityIndicator color={theme.tplBlue} size="large" />
           </View>
-        ) : selectedBranch ? (
+        ) : selectedBranch && !showPicker ? (
           <>
             <View style={styles.stampArea}>
               <StampShape branchCode={selectedBranch.BranchCode} wardNo={selectedBranch.WardNo} size={100} />
@@ -163,6 +182,10 @@ export default function CheckInScreen() {
               {selectedBranch.District ? (
                 <Text style={[styles.stampRegion, { color: theme.textMuted }]}>{selectedBranch.District}</Text>
               ) : null}
+              <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.changeBtn} hitSlop={8}>
+                <Ionicons name="swap-horizontal-outline" size={14} color={theme.tplBlue} />
+                <Text style={[styles.changeBtnText, { color: theme.tplBlue }]}>Change branch</Text>
+              </TouchableOpacity>
             </View>
 
             {alreadyVisitedToday ? (
@@ -207,7 +230,52 @@ export default function CheckInScreen() {
               <Text style={styles.checkInBtnText}>Check in</Text>
             </TouchableOpacity>
           </>
-        ) : null}
+        ) : (
+          // Branch picker (shown when no branch or user tapped "Change branch")
+          <View style={styles.pickerWrap}>
+            <View style={[styles.pickerSearchRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Ionicons name="search-outline" size={18} color={theme.textMuted} />
+              <TextInput
+                style={[styles.pickerSearchInput, { color: theme.textPrimary }]}
+                value={pickerSearch}
+                onChangeText={setPickerSearch}
+                placeholder="Search branches…"
+                placeholderTextColor={theme.textMuted}
+                autoFocus={showPicker}
+                clearButtonMode="while-editing"
+                autoCapitalize="none"
+              />
+            </View>
+
+            {showPicker && (
+              <TouchableOpacity onPress={detectNearest} style={styles.detectRow} hitSlop={4}>
+                <Ionicons name="locate-outline" size={16} color={theme.tplBlue} />
+                <Text style={[styles.detectRowText, { color: theme.tplBlue }]}>Use my location</Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={[styles.pickerList, { borderColor: theme.border }]}>
+              {pickerResults.map((b: any, i: number) => (
+                <TouchableOpacity
+                  key={b.BranchCode}
+                  style={[
+                    styles.pickerRow,
+                    { borderBottomColor: theme.borderSoft },
+                    i === pickerResults.length - 1 && { borderBottomWidth: 0 },
+                  ]}
+                  onPress={() => pickBranch(b.BranchCode)}
+                >
+                  <Text style={[styles.pickerRowText, { color: theme.textPrimary }]} numberOfLines={1}>
+                    {b.BranchName}
+                  </Text>
+                  <Text style={[styles.pickerRowDistrict, { color: theme.textMuted }]} numberOfLines={1}>
+                    {b.District}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   )
@@ -224,6 +292,16 @@ const styles = StyleSheet.create({
   stampArea: { alignItems: 'center', gap: 8, marginVertical: 4 },
   stampName: { fontSize: textSize.base, fontWeight: '600', textAlign: 'center' },
   stampRegion: { fontSize: textSize.sm, fontWeight: '600' },
+  changeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  changeBtnText: {
+    fontSize: textSize.sm,
+    fontWeight: '600',
+  },
   visitedNotice: {
     padding: 12,
     borderRadius: radius.md,
@@ -254,6 +332,50 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   checkInBtnText: { color: '#fff', fontSize: textSize.base, fontWeight: '700' },
+  // Picker
+  pickerWrap: { gap: 10 },
+  pickerSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  pickerSearchInput: {
+    flex: 1,
+    fontSize: textSize.base,
+    paddingVertical: 0,
+  },
+  detectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detectRowText: {
+    fontSize: textSize.sm,
+    fontWeight: '600',
+  },
+  pickerList: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  pickerRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 2,
+  },
+  pickerRowText: {
+    fontSize: textSize.base,
+    fontWeight: '500',
+  },
+  pickerRowDistrict: {
+    fontSize: textSize.sm,
+  },
+  // Success
   successWrap: {
     flex: 1,
     alignItems: 'center',

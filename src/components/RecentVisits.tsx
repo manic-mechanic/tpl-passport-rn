@@ -49,7 +49,7 @@ export function RecentVisits() {
             style={styles.stampSlot}
             onPress={() => router.push(`/branch/${branch.BranchCode}` as any)}
           >
-            <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={44} />
+            <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={62} />
             <Text style={[styles.stampLabel, { color: theme.textMuted }]} numberOfLines={2}>
               {branch.BranchName}
             </Text>
@@ -57,11 +57,12 @@ export function RecentVisits() {
         ))}
         {Array.from({ length: placeholderCount }).map((_, i) => (
           <View key={`empty-${i}`} style={[styles.stampSlot, styles.stampSlotEmpty]}>
-            <View style={{ opacity: 0.15 }}>
+            <View style={{ opacity: 0.12 }}>
               <StampShape
                 branchCode={GHOST_CODES[i % GHOST_CODES.length]}
                 wardNo={GHOST_WARDS[i % GHOST_WARDS.length]}
-                size={44}
+                size={62}
+                hideCode
               />
             </View>
           </View>
@@ -82,14 +83,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: textSize.base,
+    fontSize: textSize.xl,
     fontWeight: '600',
   },
   seeAll: {
-    fontSize: textSize.sm,
+    fontSize: textSize.md,
     fontWeight: '500',
   },
   stampStrip: {
@@ -101,22 +102,22 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    minHeight: 84,
-    gap: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    minHeight: 110,
+    gap: 8,
   },
   stampSlotEmpty: {},
   stampLabel: {
-    fontSize: textSize.xs,
+    fontSize: textSize.sm,
     fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 16,
   },
   emptyMessage: {
-    fontSize: textSize.sm,
+    fontSize: textSize.md,
     textAlign: 'center',
-    paddingVertical: 12,
-    lineHeight: 18,
+    paddingVertical: 14,
+    lineHeight: 20,
   },
 })

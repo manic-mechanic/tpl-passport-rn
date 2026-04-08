@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/benny/Documents/repos/tpl-passport/public/**)",
+      "Read(//Users/benny/Documents/repos/tpl-passport/app/public/**)",
+      "Bash(cp Fraunces/static/Fraunces_72pt-Bold.ttf Fraunces.ttf)",
+      "Bash(cp Roboto/static/Roboto-Regular.ttf Roboto-Regular.ttf)",
+      "Bash(cp Roboto_Condensed/static/RobotoCondensed-Bold.ttf RobotoCondensed-Bold.ttf)",
+      "Bash(cp Special_Elite/SpecialElite-Regular.ttf SpecialElite-Regular.ttf)",
+      "Bash(cp Allerta_Stencil/AllertaStencil-Regular.ttf AllertaStencil-Regular.ttf)",
+      "Bash(find /Users/benny/Documents/repos/tpl-passport-rn -name *badge* -o -name *Badge*)"
+    ]
+  }
+}
