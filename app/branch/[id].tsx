@@ -17,11 +17,11 @@ export default function BranchDetailModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: theme.borderSoft }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: theme.tplNavy }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.closeBtn}>
-          <Ionicons name="close" size={22} color={theme.textMuted} />
+          <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary, fontFamily: fonts.display }]} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]} numberOfLines={1}>
           {branch?.BranchName ?? ''}
         </Text>
         <View style={{ width: 30 }} />
@@ -49,7 +49,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 18,
     paddingBottom: 12,
-    borderBottomWidth: 1,
   },
   closeBtn: { width: 30 },
   headerTitle: {
@@ -57,6 +56,7 @@ const styles = StyleSheet.create({
     fontSize: textSize.lg,
     fontWeight: '600',
     textAlign: 'center',
+    color: 'rgba(255,255,255,0.92)',
   },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 18 },

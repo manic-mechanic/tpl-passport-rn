@@ -60,8 +60,8 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.bg }]}>
-        <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>Explore</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.tplNavy }]}>
+        <Text style={[styles.title, { fontFamily: fonts.display }]}>Explore</Text>
       </View>
 
       <ScrollView
@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: textSize.xl,
     fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
   },
   scroll: { flex: 1 },
   content: {

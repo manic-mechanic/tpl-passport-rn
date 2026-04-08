@@ -118,8 +118,9 @@ export default function CheckInScreen() {
 
   if (successBranch) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.bg }]}>
-        <View style={[styles.successWrap, { paddingTop: insets.top + 40 }]}>
+      <View style={[styles.container, { backgroundColor: theme.tplNavy }]}>
+        <View style={{ height: insets.top }} />
+        <View style={[styles.successWrap, { paddingTop: 40, backgroundColor: theme.bg }]}>
           <StampShape branchCode={successBranch.BranchCode} wardNo={successBranch.WardNo} size={110} />
           <Text style={[styles.successLabel, { color: theme.textPrimary, fontFamily: fonts.display }]}>
             Stamp collected!
@@ -146,12 +147,13 @@ export default function CheckInScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+    <View style={[styles.container, { backgroundColor: theme.tplNavy }]}>
+      <View style={{ height: insets.top }} />
       <ScrollView
-        style={styles.scroll}
+        style={[styles.scroll, { backgroundColor: theme.bg }]}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 24 },
+          { paddingTop: 20, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

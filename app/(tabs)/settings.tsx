@@ -17,11 +17,13 @@ export default function SettingsScreen() {
   const updateProfile = usePassportStore(s => s.updateProfile)
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.tplNavy }}>
+    <View style={{ height: insets.top }} />
     <ScrollView
       style={[styles.container, { backgroundColor: theme.bg }]}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 24 },
+        { paddingTop: 20, paddingBottom: insets.bottom + 24 },
       ]}
       showsVerticalScrollIndicator={false}
     >
@@ -124,6 +126,7 @@ export default function SettingsScreen() {
         </View>
       </View>
     </ScrollView>
+    </View>
   )
 }
 

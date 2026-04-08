@@ -109,11 +109,11 @@ export default function PassportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.bg }]}>
-        <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: theme.tplNavy }]}>
+        <Text style={[styles.title, { fontFamily: fonts.display }]}>
           My Passport
         </Text>
-        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+        <Text style={styles.subtitle}>
           {visitCount} of {(physicalBranches as any[]).length} stamps collected
         </Text>
       </View>
@@ -215,9 +215,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: textSize.xl,
     fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
   },
   subtitle: {
     fontSize: textSize.md,
+    color: 'rgba(255,255,255,0.6)',
   },
   tabNav: {
     flexGrow: 0,
