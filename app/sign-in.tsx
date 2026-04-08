@@ -33,10 +33,10 @@ export default function SignInScreen() {
     try {
       if (mode === 'signup') {
         const { error: err } = await authClient.signUp.email({ email, password, name })
-        if (err) { setError(err.message ?? 'Sign up failed.'); return }
+        if (err) { console.error('signup error', JSON.stringify(err)); setError(`${err.message} (${err.status})`); return }
       } else {
         const { error: err } = await authClient.signIn.email({ email, password })
-        if (err) { setError(err.message ?? 'Sign in failed.'); return }
+        if (err) { console.error('signin error', JSON.stringify(err)); setError(`${err.message} (${err.status})`); return }
       }
       router.back()
     } finally {
@@ -48,8 +48,8 @@ export default function SignInScreen() {
     setGoogleLoading(true)
     setError(null)
     try {
-      const { error: err } = await authClient.signIn.social({ provider: 'google' })
-      if (err) { setError(err.message ?? 'Google sign in failed.'); return }
+      const { error: err } = await authClient.signIn.social({ provider: 'google', callbackURL: 'tplpassportrn://' })
+      if (err) { console.error('google error', JSON.stringify(err)); setError(`${err.message ?? 'Google sign in failed.'} (${err.status})`); return }
       router.back()
     } finally {
       setGoogleLoading(false)

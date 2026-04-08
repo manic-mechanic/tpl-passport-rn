@@ -3,12 +3,15 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import { useColorScheme, View } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { colors, dark } from '@/src/theme';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export {
   // Catch any errors thrown by the Layout component.
