@@ -1,10 +1,14 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useRef, useState } from 'react'
+import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { authClient } from '@/src/lib/auth-client'
+import { sortedBranches } from '@/src/composables/useRegion'
+import { BranchPickerModal } from '@/src/components/BranchPickerModal'
 import { fonts, radius, textSize } from '@/src/theme'
 
 const THEME_OPTIONS = [
@@ -20,154 +24,216 @@ export default function SettingsScreen() {
   const profile = usePassportStore(s => s.profile)
   const updateProfile = usePassportStore(s => s.updateProfile)
   const { data: session } = authClient.useSession()
+  const branchPickerRef = useRef<BottomSheetModal>(null)
+
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState(profile.name)
+
+  function commitName() {
+    setEditingName(false)
+    const trimmed = nameInput.trim()
+    if (trimmed !== profile.name) updateProfile({ name: trimmed })
+  }
+
+  const homeBranch = sortedBranches.find(b => b.BranchCode === profile.homeBranch)
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-    <View style={[styles.topBar, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-      <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Settings</Text>
-    </View>
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.bg }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: 20, paddingBottom: insets.bottom + 24 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Account */}
-      <View style={styles.group}>
-        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Account</Text>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          {session?.user ? (
-            <>
-              <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
-                <View style={styles.labelWrap}>
-                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>
-                    {session.user.name || session.user.email}
-                  </Text>
-                  {session.user.name ? (
-                    <Text style={[styles.settingHint, { color: theme.textMuted }]}>{session.user.email}</Text>
-                  ) : null}
+      <View style={[styles.topBar, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
+        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Settings</Text>
+      </View>
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.bg }]}
+        contentContainerStyle={[styles.content, { paddingTop: 20, paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Account */}
+        <View style={styles.group}>
+          <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Account</Text>
+          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+            {session?.user ? (
+              <>
+                {/* Account row: identity + sign out inline */}
+                <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
+                  <View style={styles.labelWrap}>
+                    <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>
+                      {session.user.name || session.user.email}
+                    </Text>
+                    {session.user.name ? (
+                      <Text style={[styles.settingHint, { color: theme.textMuted }]}>{session.user.email}</Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity onPress={() => authClient.signOut()} hitSlop={8}>
+                    <Text style={[styles.actionLink, { color: '#c0392b' }]}>Sign out</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-              <TouchableOpacity
-                style={styles.settingRow}
-                onPress={() => authClient.signOut()}
-              >
-                <Text style={[styles.signInLink, { color: '#c0392b' }]}>Sign out</Text>
+
+                {/* Name */}
+                <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Name</Text>
+                  {editingName ? (
+                    <TextInput
+                      style={[styles.inlineInput, { color: theme.textPrimary, borderColor: theme.border }]}
+                      value={nameInput}
+                      onChangeText={setNameInput}
+                      onBlur={commitName}
+                      onSubmitEditing={commitName}
+                      autoFocus
+                      returnKeyType="done"
+                      placeholder="Your name"
+                      placeholderTextColor={theme.textMuted}
+                    />
+                  ) : (
+                    <TouchableOpacity onPress={() => { setNameInput(profile.name); setEditingName(true) }} hitSlop={8}>
+                      <Text style={[styles.actionLink, { color: profile.name ? theme.textPrimary : theme.textMuted }]}>
+                        {profile.name || 'Add name'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Home branch */}
+                <View style={styles.settingRow}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Home branch</Text>
+                  <TouchableOpacity onPress={() => branchPickerRef.current?.present()} hitSlop={8}>
+                    <Text style={[styles.actionLink, { color: homeBranch ? theme.textPrimary : theme.textMuted }]}>
+                      {homeBranch ? homeBranch.BranchName : 'Select branch'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/sign-in' as any)}>
+                <View style={styles.labelWrap}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
+                  <Text style={[styles.settingHint, { color: theme.textMuted }]}>
+                    Access your passport on any device
+                  </Text>
+                </View>
+                <Text style={[styles.actionLink, { color: theme.tplBlue }]}>Sign in →</Text>
               </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/sign-in' as any)}>
+            )}
+          </View>
+        </View>
+
+        {/* Appearance */}
+        <View style={styles.group}>
+          <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Appearance</Text>
+          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Theme</Text>
+              <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+                {THEME_OPTIONS.map(opt => (
+                  <TouchableOpacity
+                    key={String(opt.value)}
+                    style={[
+                      styles.themeBtn,
+                      profile.theme === opt.value && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                    ]}
+                    onPress={() => updateProfile({ theme: opt.value })}
+                  >
+                    <Text style={[
+                      styles.themeBtnText,
+                      { color: profile.theme === opt.value ? theme.textPrimary : theme.textMuted },
+                    ]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Developer */}
+        <View style={styles.group}>
+          <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Developer</Text>
+          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+            <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
               <View style={styles.labelWrap}>
-                <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
+                <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Location check</Text>
                 <Text style={[styles.settingHint, { color: theme.textMuted }]}>
-                  Access your passport on any device
+                  Require being within 100 m to check in
                 </Text>
               </View>
-              <Text style={[styles.signInLink, { color: theme.tplBlue }]}>Sign in →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Appearance */}
-      <View style={styles.group}>
-        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Appearance</Text>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          <View style={styles.settingRow}>
-            <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Theme</Text>
-            <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-              {THEME_OPTIONS.map(opt => (
-                <TouchableOpacity
-                  key={String(opt.value)}
-                  style={[
-                    styles.themeBtn,
-                    profile.theme === opt.value && [styles.themeBtnActive, { backgroundColor: theme.surface }],
-                  ]}
-                  onPress={() => updateProfile({ theme: opt.value })}
-                >
-                  <Text style={[
-                    styles.themeBtnText,
-                    { color: profile.theme === opt.value ? theme.textPrimary : theme.textMuted },
-                  ]}>
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+                {[{ v: false, l: 'On' }, { v: true, l: 'Off' }].map(opt => (
+                  <TouchableOpacity
+                    key={String(opt.v)}
+                    style={[
+                      styles.themeBtn,
+                      profile.bypassLocationFence === opt.v && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                    ]}
+                    onPress={() => updateProfile({ bypassLocationFence: opt.v })}
+                  >
+                    <Text style={[
+                      styles.themeBtnText,
+                      { color: profile.bypassLocationFence === opt.v ? theme.textPrimary : theme.textMuted },
+                    ]}>
+                      {opt.l}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
+            {__DEV__ && (
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={() =>
+                  Alert.alert('Reset all data', 'Wipes local store and signs out. Cannot be undone.', [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Reset',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await authClient.signOut()
+                        await AsyncStorage.clear().catch(() => {})
+                      },
+                    },
+                  ])
+                }
+              >
+                <Text style={[styles.settingLabel, { color: '#c0392b' }]}>Reset all data</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </View>
 
-      {/* Developer */}
-      <View style={styles.group}>
-        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Developer</Text>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
-            <View style={styles.labelWrap}>
-              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Location check</Text>
-              <Text style={[styles.settingHint, { color: theme.textMuted }]}>
-                Require being within 100 m to check in
+        {/* About */}
+        <View style={styles.group}>
+          <Text style={[styles.groupLabel, { color: theme.textMuted }]}>About</Text>
+          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+            <View style={[styles.aboutRow, { borderBottomColor: theme.borderSoft }]}>
+              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Version</Text>
+              <Text style={[styles.aboutVal, { color: theme.textMuted }]}>1.0 MVP</Text>
+            </View>
+            <View style={[styles.aboutRow, { borderBottomColor: theme.borderSoft }]}>
+              <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Developed by</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('https://www.github.com/bennygoldman')} hitSlop={8}>
+                <Text style={[styles.actionLink, { color: theme.tplBlue }]}>Benny Goldman ↗</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.unofficialRow, { borderBottomColor: theme.borderSoft }]}>
+              <Text style={[styles.unofficialText, { color: theme.textMuted }]}>
+                This is an unofficial app and is not affiliated with or endorsed by Toronto Public Library.
               </Text>
             </View>
-            <View style={[styles.themeToggle, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-              {[{ v: false, l: 'On' }, { v: true, l: 'Off' }].map(opt => (
-                <TouchableOpacity
-                  key={String(opt.v)}
-                  style={[
-                    styles.themeBtn,
-                    profile.bypassLocationFence === opt.v && [styles.themeBtnActive, { backgroundColor: theme.surface }],
-                  ]}
-                  onPress={() => updateProfile({ bypassLocationFence: opt.v })}
-                >
-                  <Text style={[
-                    styles.themeBtnText,
-                    { color: profile.bypassLocationFence === opt.v ? theme.textPrimary : theme.textMuted },
-                  ]}>
-                    {opt.l}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          {__DEV__ && (
             <TouchableOpacity
-              style={styles.settingRow}
-              onPress={() =>
-                Alert.alert('Reset all data', 'Wipes local store and signs out. Cannot be undone.', [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Reset',
-                    style: 'destructive',
-                    onPress: async () => {
-                      await authClient.signOut()
-                      await AsyncStorage.clear().catch(() => {})
-                    },
-                  },
-                ])
-              }
+              style={[styles.aboutRow, { borderBottomWidth: 0 }]}
+              onPress={() => Linking.openURL('https://www.torontopubliclibrary.ca')}
             >
-              <Text style={[styles.settingLabel, { color: '#c0392b' }]}>Reset all data</Text>
+              <Text style={[styles.actionLink, { color: theme.tplBlue }]}>Toronto Public Library ↗</Text>
             </TouchableOpacity>
-          )}
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
-      {/* About */}
-      <View style={styles.group}>
-        <Text style={[styles.groupLabel, { color: theme.textMuted }]}>About</Text>
-        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          <View style={[styles.aboutRow, { borderBottomColor: theme.borderSoft }]}>
-            <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Version</Text>
-            <Text style={[styles.aboutVal, { color: theme.textMuted }]}>1.0 MVP</Text>
-          </View>
-          <View style={[styles.aboutRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.aboutLink, { color: theme.tplBlue }]}>Toronto Public Library ↗</Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+      <BranchPickerModal
+        ref={branchPickerRef}
+        selectedCode={profile.homeBranch}
+        onSelect={code => updateProfile({ homeBranch: code })}
+      />
     </View>
   )
 }
@@ -207,7 +273,16 @@ const styles = StyleSheet.create({
   labelWrap: { flex: 1, marginRight: 12 },
   settingLabel: { fontSize: textSize.md, fontWeight: '600' },
   settingHint: { fontSize: textSize.sm, marginTop: 2, lineHeight: 16 },
-  signInLink: { fontSize: textSize.md, fontWeight: '600' },
+  actionLink: { fontSize: textSize.md, fontWeight: '600' },
+  inlineInput: {
+    fontSize: textSize.md,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 140,
+    textAlign: 'right',
+  },
   themeToggle: {
     flexDirection: 'row',
     borderWidth: 1,
@@ -236,5 +311,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   aboutVal: { fontSize: textSize.md },
-  aboutLink: { fontSize: textSize.md, fontWeight: '600' },
+  unofficialRow: {
+    padding: 13,
+    borderBottomWidth: 1,
+  },
+  unofficialText: {
+    fontSize: textSize.sm,
+    lineHeight: 18,
+  },
 })
