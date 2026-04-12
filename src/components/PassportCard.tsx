@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
+import { authClient } from '../lib/auth-client'
 import { generateMRZ } from '../lib/mrz'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
@@ -18,6 +19,8 @@ export function PassportCard() {
   const checkIns = usePassportStore(s => s.checkIns)
   const updateProfile = usePassportStore(s => s.updateProfile)
 
+  const { data: session } = authClient.useSession()
+  const signedIn = !!session?.user
   const branchPickerRef = useRef<BottomSheetModal>(null)
 
   const visitCount = new Set(checkIns.map(c => c.branchCode)).size
@@ -40,22 +43,34 @@ export function PassportCard() {
               <View style={styles.profileFields}>
                 <View>
                   <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Name / Nom</Text>
-                  <TextInput
-                    style={[styles.nameInput, { color: theme.tplBlue, fontFamily: fonts.display, borderBottomColor: theme.borderSoft }]}
-                    value={profile.name}
-                    onChangeText={name => updateProfile({ name })}
-                    placeholder="Your name"
-                    placeholderTextColor={theme.textMuted}
-                    maxLength={40}
-                  />
+                  {signedIn ? (
+                    <Text style={[styles.nameInput, { color: theme.tplBlue, fontFamily: fonts.display, borderBottomWidth: 0 }]}>
+                      {profile.name || '—'}
+                    </Text>
+                  ) : (
+                    <TextInput
+                      style={[styles.nameInput, { color: theme.tplBlue, fontFamily: fonts.display, borderBottomColor: theme.borderSoft }]}
+                      value={profile.name}
+                      onChangeText={name => updateProfile({ name })}
+                      placeholder="Your name"
+                      placeholderTextColor={theme.textMuted}
+                      maxLength={40}
+                    />
+                  )}
                 </View>
                 <View>
                   <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Home Branch</Text>
-                  <TouchableOpacity onPress={() => branchPickerRef.current?.present()}>
+                  {signedIn ? (
                     <Text style={[styles.fieldValue, { color: profile.homeBranch ? theme.tplBlue : theme.textMuted }]} numberOfLines={1}>
-                      {profile.homeBranch ? branchNameForCode(profile.homeBranch) : 'Tap to set'}
+                      {profile.homeBranch ? branchNameForCode(profile.homeBranch) : '—'}
                     </Text>
-                  </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={() => branchPickerRef.current?.present()}>
+                      <Text style={[styles.fieldValue, { color: profile.homeBranch ? theme.tplBlue : theme.textMuted }]} numberOfLines={1}>
+                        {profile.homeBranch ? branchNameForCode(profile.homeBranch) : 'Tap to set'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
               <View style={[styles.avatar, { borderColor: theme.tplBlue, backgroundColor: `${theme.tplBlue}1a` }]}>
@@ -98,11 +113,13 @@ export function PassportCard() {
         </View>
       </View>
 
-      <BranchPickerModal
-        ref={branchPickerRef}
-        selectedCode={profile.homeBranch}
-        onSelect={code => updateProfile({ homeBranch: code })}
-      />
+      {!signedIn && (
+        <BranchPickerModal
+          ref={branchPickerRef}
+          selectedCode={profile.homeBranch}
+          onSelect={code => updateProfile({ homeBranch: code })}
+        />
+      )}
     </>
   )
 }
