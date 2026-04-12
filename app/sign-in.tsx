@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { authClient } from '@/src/lib/auth-client'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { fonts, radius, textSize } from '@/src/theme'
 
 export default function SignInScreen() {
@@ -58,15 +59,11 @@ export default function SignInScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.closeBtn}>
-          <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>
-          {mode === 'signin' ? 'Sign In' : 'Create Account'}
-        </Text>
-        <View style={{ width: 30 }} />
-      </View>
+      <ScreenHeader
+        title={mode === 'signin' ? 'Sign In' : 'Create Account'}
+        onClose={() => router.back()}
+        topInset={12}
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -176,19 +173,7 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  closeBtn: { width: 30 },
-  headerTitle: {
-    flex: 1,
-    fontSize: textSize.lg,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.92)',
+  modeSwitch: {
   },
   content: {
     paddingHorizontal: 20,

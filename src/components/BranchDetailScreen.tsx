@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
 import { sortedBranches } from '@/src/composables/useRegion'
 import { BranchDetail } from '@/src/components/BranchDetail'
-import { fonts, textSize } from '@/src/theme'
-import Ionicons from '@expo/vector-icons/Ionicons'
+import { textSize } from '@/src/theme'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 
 export default function BranchDetailScreen() {
   const theme = useTheme()
@@ -25,15 +25,7 @@ export default function BranchDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]} numberOfLines={1}>
-          {branch?.BranchName ?? ''}
-        </Text>
-        <View style={{ width: 30 }} />
-      </View>
+      <ScreenHeader title={branch?.BranchName ?? ''} onBack={() => router.back()} />
 
       <ScrollView
         ref={scrollRef}
@@ -53,20 +45,6 @@ export default function BranchDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  backBtn: { width: 30 },
-  headerTitle: {
-    flex: 1,
-    fontSize: textSize.lg,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.92)',
-  },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 18, paddingTop: 20 },
   notFound: { paddingTop: 18, fontSize: textSize.md },

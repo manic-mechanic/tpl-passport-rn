@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
 import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { BadgeCard } from '@/src/components/BadgeCard'
 import { BadgeDetailSheet } from '@/src/components/BadgeDetailSheet'
@@ -26,7 +26,7 @@ const BADGE_DISPLAY_ORDER = [
 
 export default function PassportScreen() {
   const theme = useTheme()
-  const insets = useSafeAreaInsets()
+
   const router = useRouter()
   const [activePage, setActivePage] = useState(0)
   const [activeBadge, setActiveBadge] = useState<Badge | null>(null)
@@ -224,19 +224,14 @@ export default function PassportScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.title, { fontFamily: fonts.display }]}>
-            My Passport
-          </Text>
-          <TouchableOpacity
-            onPress={() => router.push('./history' as any)}
-            hitSlop={8}
-          >
+      <ScreenHeader
+        title="My Passport"
+        rightAction={
+          <TouchableOpacity onPress={() => router.push('./history' as any)} hitSlop={8}>
             <Text style={styles.allVisitsLink}>All visits</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
 
       <ScrollView
         horizontal
@@ -348,21 +343,6 @@ export default function PassportScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: -0.5,
-  },
   allVisitsLink: {
     fontSize: textSize.sm,
     fontWeight: '500',

@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches } from '@/src/composables/useRegion'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { fonts, textSize } from '@/src/theme'
 import type { CheckIn } from '@/src/types'
@@ -72,13 +73,7 @@ export default function HistoryScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>History</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="History" onBack={() => router.back()} />
 
       <SectionList
         sections={sections}
@@ -177,20 +172,6 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  backBtn: { width: 40 },
-  headerTitle: {
-    flex: 1,
-    fontSize: textSize.lg,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.92)',
-  },
   listContent: {
     paddingHorizontal: 18,
     paddingTop: 20,

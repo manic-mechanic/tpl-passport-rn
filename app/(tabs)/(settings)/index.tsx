@@ -9,6 +9,7 @@ import { usePassportStore } from '@/src/stores/passport'
 import { authClient } from '@/src/lib/auth-client'
 import { sortedBranches } from '@/src/composables/useRegion'
 import { BranchPickerModal } from '@/src/components/BranchPickerModal'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { fonts, radius, textSize } from '@/src/theme'
 
 const THEME_OPTIONS = [
@@ -39,9 +40,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Settings</Text>
-      </View>
+      <ScreenHeader title="Settings" />
       <ScrollView
         style={[styles.container, { backgroundColor: theme.bg }]}
         contentContainerStyle={[styles.content, { paddingTop: 20, paddingBottom: insets.bottom + 24 }]}
@@ -241,16 +240,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 18 },
-  topBar: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: -0.5,
-  },
   group: { marginBottom: 24 },
   groupLabel: {
     fontSize: textSize.xs,

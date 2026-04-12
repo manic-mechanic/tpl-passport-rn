@@ -17,6 +17,7 @@ import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch } from '../types'
+import { ScreenHeader } from './ScreenHeader'
 import { StampShape } from './StampShape'
 
 const FALLBACK_CODE = 'TRL' // shown when GPS is unavailable
@@ -152,9 +153,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Check In</Text>
-      </View>
+      <ScreenHeader title="Check In" />
       <ScrollView
         style={[styles.scroll, { backgroundColor: theme.bg }]}
         contentContainerStyle={[
@@ -284,16 +283,6 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: -0.5,
-  },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 18, gap: 16 },
   subtitle: { fontSize: textSize.md, lineHeight: 20 },

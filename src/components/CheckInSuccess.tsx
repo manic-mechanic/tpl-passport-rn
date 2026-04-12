@@ -8,6 +8,7 @@ import { useTheme } from '../hooks/useTheme'
 import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
+import { ScreenHeader } from './ScreenHeader'
 import type { Branch } from '../types'
 import { CameraSheet } from './CameraSheet'
 import { StampShape } from './StampShape'
@@ -58,9 +59,7 @@ export function CheckInSuccess({ branch, timestamp, origin, onDone }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Check In</Text>
-      </View>
+      <ScreenHeader title="Check In" />
       <View style={[styles.successWrap, { paddingTop: 40, paddingBottom: insets.bottom + 24 }]}>
         <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={110} />
         <Text style={[styles.successLabel, { color: theme.textPrimary, fontFamily: fonts.display }]}>
@@ -136,16 +135,6 @@ export function CheckInSuccess({ branch, timestamp, origin, onDone }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: -0.5,
-  },
   successWrap: {
     flex: 1,
     alignItems: 'center',

@@ -17,6 +17,7 @@ import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
 import routesData from '@/src/data/routes.json'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { fonts, radius, textSize } from '@/src/theme'
 import type { Branch, Route } from '@/src/types'
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -65,9 +66,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: theme.tplNavy }]}>
-        <Text style={[styles.title, { fontFamily: fonts.display }]}>Explore</Text>
-      </View>
+      <ScreenHeader title="Explore" />
 
       <ScrollView
         style={styles.scroll}
@@ -220,16 +219,6 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
-  title: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: -0.5,
-  },
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: 18,

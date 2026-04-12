@@ -4,6 +4,7 @@ import { useTheme } from '@/src/hooks/useTheme'
 import { HomeBadgesStrip } from '@/src/components/HomeBadgesStrip'
 import { PassportCard } from '@/src/components/PassportCard'
 import { RecentVisits } from '@/src/components/RecentVisits'
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { fonts, textSize } from '@/src/theme'
 
 export default function HomeScreen() {
@@ -12,11 +13,11 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.tplNavy, paddingTop: insets.top + 8 }]}>
+      <ScreenHeader>
         <Text style={[styles.wordmark, { fontFamily: fonts.display }]}>
           passport<Text style={styles.wordmarkColon}>:</Text>
         </Text>
-      </View>
+      </ScreenHeader>
 
       <KeyboardAvoidingView
         style={styles.scroll}
@@ -39,10 +40,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topBar: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
   wordmark: {
     fontSize: textSize.xxxl,
     fontWeight: '700',
