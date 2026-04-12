@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useRouter } from 'expo-router'
+import { useRouter, useSegments } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator, Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View,
@@ -10,6 +10,7 @@ import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch, CheckIn } from '../types'
+import { CameraSheet } from './CameraSheet'
 import { NoteEditSheet, type NoteEditSheetMethods } from './NoteEditSheet'
 import { StampShape } from './StampShape'
 import branchHoursData from '../data/branch-hours.json'
@@ -198,7 +199,7 @@ function VisitRow({
   onEditNote: (visit: CheckIn) => void
 }) {
   const theme = useTheme()
-  const { pickPhoto, takePhoto, uploading } = usePhotoPicker(visit.timestamp)
+  const { openCamera, onCameraCapture, onCameraClose, cameraOpen, uploading } = usePhotoPicker(visit.timestamp)
   const hasNote = !!visit.note
 
   return (
@@ -232,16 +233,13 @@ function VisitRow({
         ) : uploading ? (
           <ActivityIndicator size="small" color={theme.textMuted} />
         ) : (
-          <View style={vstyles.addPhotoBtns}>
-            <TouchableOpacity onPress={takePhoto} hitSlop={6}>
-              <Ionicons name="camera-outline" size={18} color={theme.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={pickPhoto} hitSlop={6}>
-              <Ionicons name="image-outline" size={18} color={theme.textMuted} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={openCamera} hitSlop={6}>
+            <Ionicons name="camera-outline" size={18} color={theme.textMuted} />
+          </TouchableOpacity>
         )}
       </View>
+
+      <CameraSheet visible={cameraOpen} onCapture={onCameraCapture} onClose={onCameraClose} />
     </View>
   )
 }
@@ -281,11 +279,6 @@ const vstyles = StyleSheet.create({
     height: 40,
     borderRadius: 4,
   },
-  addPhotoBtns: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
 })
 
 // ─── BranchDetail ─────────────────────────────────────────────────────────────
@@ -298,6 +291,7 @@ interface Props {
 export function BranchDetail({ branch, onNearbyPress }: Props) {
   const theme = useTheme()
   const router = useRouter()
+  const segments = useSegments()
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
@@ -370,7 +364,12 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
         ) : (
           <TouchableOpacity
             style={[styles.checkInBtn, { backgroundColor: theme.tplBlue }]}
-            onPress={() => router.navigate(`/(tabs)/(check-in)?branch=${branch.BranchCode}` as any)}
+            onPress={() => {
+                const tab = segments.find(s => s === '(explore)' || s === '(passport)')
+                const origin = tab === '(explore)' ? 'explore' : tab === '(passport)' ? 'passport' : undefined
+                const params = origin ? `branch=${branch.BranchCode}&origin=${origin}` : `branch=${branch.BranchCode}`
+                router.navigate(`/(tabs)/(check-in)?${params}` as any)
+              }}
           >
             <Text style={styles.checkInBtnText}>
               {visited ? 'Check in again' : 'Check in here'}

@@ -37,6 +37,20 @@
         {
           "photosPermission": "TPL Passport uses your photo library to attach photos to check-ins."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "TPL Passport uses your camera to add photos to check-ins."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "TPL Passport reads your photo library to show a recent photo preview.",
+          "savePhotosPermission": false,
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ],
     "experiments": {

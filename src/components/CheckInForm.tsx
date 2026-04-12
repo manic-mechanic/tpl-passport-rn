@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -35,6 +36,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   const [noteText, setNoteText] = useState('')
   const [detecting, setDetecting] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [checkInError, setCheckInError] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
 
@@ -43,23 +45,27 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   const bypassLocationFence = usePassportStore(s => s.profile.bypassLocationFence)
 
   const selectedBranch: Branch | null = sortedBranches.find(b => b.BranchCode === selectedCode) ?? null
-  const alreadyVisitedToday = selectedBranch ? hasVisitedToday(selectedBranch.BranchCode) : false
 
   const pickerResults: Branch[] = pickerSearch.trim()
     ? sortedBranches.filter(b =>
       b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
-    ).slice(0, 8)
-    : sortedBranches.slice(0, 8)
+    )
+    : sortedBranches
 
   useFocusEffect(
     useCallback(() => {
       setNoteText('')
       setLocationError(null)
+      setCheckInError(null)
       setShowPicker(false)
       setPickerSearch('')
       if (prefillCode) {
-        setSelectedCode(prefillCode)
-        setDetecting(false)
+        if (hasVisitedToday(prefillCode)) {
+          showAlreadyVisitedAlert(prefillCode, () => detectNearest())
+        } else {
+          setSelectedCode(prefillCode)
+          setDetecting(false)
+        }
       } else {
         setSelectedCode('')
         detectNearest()
@@ -67,10 +73,21 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
     }, [prefillCode])
   )
 
+  function showAlreadyVisitedAlert(code: string, onDismiss: () => void) {
+    const branch = sortedBranches.find(b => b.BranchCode === code)
+    Alert.alert(
+      'Already checked in',
+      `You've already checked in at ${branch?.BranchName ?? code} today.`,
+      [{ text: 'OK', onPress: onDismiss }]
+    )
+  }
+
   async function detectNearest() {
     setDetecting(true)
     setLocationError(null)
+    setCheckInError(null)
     setShowPicker(false)
+    setSelectedCode('')
     try {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
@@ -82,7 +99,11 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
       const nearest = sortedBranches
         .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
         .sort((a, b) => a.distKm - b.distKm)[0]
-      setSelectedCode(nearest.BranchCode)
+      if (hasVisitedToday(nearest.BranchCode)) {
+        showAlreadyVisitedAlert(nearest.BranchCode, () => setShowPicker(true))
+      } else {
+        setSelectedCode(nearest.BranchCode)
+      }
     } catch {
       setSelectedCode(FALLBACK_CODE)
       setLocationError('Could not determine location — showing default branch.')
@@ -92,14 +113,20 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   }
 
   function pickBranch(code: string) {
+    if (hasVisitedToday(code)) {
+      showAlreadyVisitedAlert(code, () => {})
+      return
+    }
     setSelectedCode(code)
     setShowPicker(false)
     setPickerSearch('')
     setLocationError(null)
+    setCheckInError(null)
   }
 
   async function doCheckIn() {
-    if (!selectedBranch || alreadyVisitedToday) return
+    if (!selectedBranch) return
+    setCheckInError(null)
 
     if (!bypassLocationFence) {
       try {
@@ -107,16 +134,15 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
         const km = haversineKm(pos.coords.latitude, pos.coords.longitude, selectedBranch.Lat, selectedBranch.Long)
         if (km > MAX_CHECKIN_DISTANCE_KM) {
           const dist = km >= 1 ? `${km.toFixed(1)} km` : `${Math.round(km * 1000)} m`
-          setLocationError(`You're ${dist} away — you must be within 100m to check in.`)
+          setCheckInError(`You're ${dist} away — you must be within 100m to check in.`)
           return
         }
       } catch (err: any) {
-        setLocationError(err?.code === LOCATION_TIMEOUT_CODE ? 'Location check timed out. Try again.' : 'Location access denied.')
+        setCheckInError(err?.code === LOCATION_TIMEOUT_CODE ? 'Location check timed out. Try again.' : 'Location access denied.')
         return
       }
     }
 
-    setLocationError(null)
     const timestamp = checkIn(selectedBranch.BranchCode, noteText.trim())
     if (timestamp) {
       setNoteText('')
@@ -136,6 +162,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
           { paddingTop: 20, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>
@@ -160,53 +187,45 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
               <Text style={[styles.stampName, { color: theme.textPrimary, fontFamily: fonts.display }]}>
                 {selectedBranch.BranchName}
               </Text>
-              {selectedBranch.District ? (
-                <Text style={[styles.stampRegion, { color: theme.textMuted }]}>{selectedBranch.District}</Text>
-              ) : null}
               <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.changeBtn} hitSlop={8}>
                 <Ionicons name="swap-horizontal-outline" size={14} color={theme.tplBlue} />
                 <Text style={[styles.changeBtnText, { color: theme.tplBlue }]}>Change branch</Text>
               </TouchableOpacity>
+              {/* Reserved space for check-in error — prevents layout shift */}
+              <View style={styles.checkInErrorWrap}>
+                {checkInError ? (
+                  <Text style={[styles.checkInErrorText, { color: '#c0392b' }]}>
+                    {checkInError}
+                  </Text>
+                ) : null}
+              </View>
             </View>
 
-            {alreadyVisitedToday ? (
-              <View style={[styles.visitedNotice, { backgroundColor: `${theme.tplBlue}10`, borderColor: `${theme.tplBlue}33` }]}>
-                <Text style={[styles.visitedNoticeText, { color: theme.textMuted }]}>
-                  You've already checked in here today
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
-                  Note <Text style={[styles.optional, { color: theme.textMuted }]}>(optional)</Text>
-                </Text>
-                <TextInput
-                  style={[styles.noteTextarea, {
-                    color: theme.textPrimary,
-                    backgroundColor: theme.surface,
-                    borderColor: theme.border,
-                  }]}
-                  value={noteText}
-                  onChangeText={setNoteText}
-                  placeholder="What did you do? What did you read?"
-                  placeholderTextColor={theme.textMuted}
-                  multiline
-                  numberOfLines={3}
-                  maxLength={500}
-                  textAlignVertical="top"
-                />
-                <Text style={[styles.charCount, { color: theme.textMuted }]}>{noteText.length} / 500</Text>
-              </View>
-            )}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>
+                Note <Text style={[styles.optional, { color: theme.textMuted }]}>(optional)</Text>
+              </Text>
+              <TextInput
+                style={[styles.noteTextarea, {
+                  color: theme.textPrimary,
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                }]}
+                value={noteText}
+                onChangeText={setNoteText}
+                placeholder="What did you do? What did you read?"
+                placeholderTextColor={theme.textMuted}
+                multiline
+                numberOfLines={3}
+                maxLength={500}
+                textAlignVertical="top"
+              />
+              <Text style={[styles.charCount, { color: theme.textMuted }]}>{noteText.length} / 500</Text>
+            </View>
 
             <TouchableOpacity
-              style={[
-                styles.checkInBtn,
-                { backgroundColor: alreadyVisitedToday ? theme.textMuted : theme.tplBlue },
-                alreadyVisitedToday && { opacity: 0.6 },
-              ]}
+              style={[styles.checkInBtn, { backgroundColor: theme.tplBlue }]}
               onPress={doCheckIn}
-              disabled={alreadyVisitedToday}
             >
               <Text style={styles.checkInBtnText}>Check in</Text>
             </TouchableOpacity>
@@ -222,7 +241,6 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
                 onChangeText={setPickerSearch}
                 placeholder="Search branches…"
                 placeholderTextColor={theme.textMuted}
-                autoFocus={showPicker}
                 clearButtonMode="while-editing"
                 autoCapitalize="none"
               />
@@ -235,7 +253,12 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
               </TouchableOpacity>
             )}
 
-            <View style={[styles.pickerList, { borderColor: theme.border }]}>
+            <ScrollView
+              style={[styles.pickerList, { borderColor: theme.border }]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled
+            >
               {pickerResults.map((b, i) => (
                 <TouchableOpacity
                   key={b.BranchCode}
@@ -249,12 +272,9 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
                   <Text style={[styles.pickerRowText, { color: theme.textPrimary }]} numberOfLines={1}>
                     {b.BranchName}
                   </Text>
-                  <Text style={[styles.pickerRowDistrict, { color: theme.textMuted }]} numberOfLines={1}>
-                    {b.District}
-                  </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
       </ScrollView>
@@ -281,7 +301,6 @@ const styles = StyleSheet.create({
   detectingWrap: { alignItems: 'center', paddingVertical: 40 },
   stampArea: { alignItems: 'center', gap: 8, marginVertical: 4 },
   stampName: { fontSize: textSize.base, fontWeight: '600', textAlign: 'center' },
-  stampRegion: { fontSize: textSize.sm, fontWeight: '600' },
   changeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,12 +311,17 @@ const styles = StyleSheet.create({
     fontSize: textSize.sm,
     fontWeight: '600',
   },
-  visitedNotice: {
-    padding: 12,
-    borderRadius: radius.md,
-    borderWidth: 1,
+  checkInErrorWrap: {
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  visitedNoticeText: { fontSize: textSize.md, textAlign: 'center' },
+  checkInErrorText: {
+    fontSize: textSize.md,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
   fieldGroup: { gap: 4 },
   fieldLabel: {
     fontSize: textSize.md,
@@ -323,7 +347,7 @@ const styles = StyleSheet.create({
   },
   checkInBtnText: { color: '#fff', fontSize: textSize.base, fontWeight: '700' },
   // Branch picker
-  pickerWrap: { gap: 10 },
+  pickerWrap: { gap: 10, flex: 1 },
   pickerSearchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,8 +385,5 @@ const styles = StyleSheet.create({
   pickerRowText: {
     fontSize: textSize.base,
     fontWeight: '500',
-  },
-  pickerRowDistrict: {
-    fontSize: textSize.sm,
   },
 })
