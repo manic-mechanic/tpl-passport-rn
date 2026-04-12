@@ -5,6 +5,7 @@ export default function PassportLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="branch/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="history" options={{ headerShown: false }} />
     </Stack>
   )
 }
