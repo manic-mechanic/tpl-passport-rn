@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { ScrollView, View, Text, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
 import { HomeBadgesStrip } from '@/src/components/HomeBadgesStrip'
@@ -19,21 +19,17 @@ export default function HomeScreen() {
         </Text>
       </ScreenHeader>
 
-      <KeyboardAvoidingView
+      <ScrollView
         style={styles.scroll}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={insets.top + 44}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <PassportCard />
-          <RecentVisits />
-          <HomeBadgesStrip />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <PassportCard />
+        <RecentVisits />
+        <HomeBadgesStrip />
+      </ScrollView>
     </View>
   )
 }

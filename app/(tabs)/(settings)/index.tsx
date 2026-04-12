@@ -46,6 +46,7 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.content, { paddingTop: 20, paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* Account */}
         <View style={styles.group}>

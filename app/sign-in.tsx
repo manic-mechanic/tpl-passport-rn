@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -23,6 +23,8 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const emailRef = useRef<TextInput>(null)
+  const passwordRef = useRef<TextInput>(null)
 
   async function handleEmailSubmit() {
     if (!email.trim() || !password.trim()) {
@@ -69,6 +71,7 @@ export default function SignInScreen() {
         <ScrollView
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <Text style={[styles.lead, { color: theme.textMuted }]}>
@@ -108,6 +111,9 @@ export default function SignInScreen() {
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="words"
                 autoComplete="name"
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
           )}
@@ -115,6 +121,7 @@ export default function SignInScreen() {
           <View style={styles.field}>
             <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Email</Text>
             <TextInput
+              ref={emailRef}
               style={[styles.input, { color: theme.textPrimary, backgroundColor: theme.surface, borderColor: theme.border }]}
               value={email}
               onChangeText={setEmail}
@@ -123,12 +130,16 @@ export default function SignInScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              blurOnSubmit={false}
             />
           </View>
 
           <View style={styles.field}>
             <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Password</Text>
             <TextInput
+              ref={passwordRef}
               style={[styles.input, { color: theme.textPrimary, backgroundColor: theme.surface, borderColor: theme.border }]}
               value={password}
               onChangeText={setPassword}
@@ -136,6 +147,8 @@ export default function SignInScreen() {
               placeholderTextColor={theme.textMuted}
               secureTextEntry
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              returnKeyType="done"
+              onSubmitEditing={handleEmailSubmit}
             />
           </View>
 

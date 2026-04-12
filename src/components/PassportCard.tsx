@@ -1,6 +1,6 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useRef } from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { authClient } from '../lib/auth-client'
@@ -55,6 +55,10 @@ export function PassportCard() {
                       placeholder="Your name"
                       placeholderTextColor={theme.textMuted}
                       maxLength={40}
+                      autoCapitalize="words"
+                      autoComplete="name"
+                      returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
                     />
                   )}
                 </View>
