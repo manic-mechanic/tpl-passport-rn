@@ -1,11 +1,11 @@
-import { useRef } from 'react'
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
-import { useTheme } from '../hooks/useTheme'
-import { usePassportStore } from '../stores/passport'
+import { useRef } from 'react'
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { physicalBranches, sortedBranches } from '../composables/useRegion'
-import { fonts, radius, textSize } from '../theme'
+import { useTheme } from '../hooks/useTheme'
 import { generateMRZ } from '../lib/mrz'
+import { usePassportStore } from '../stores/passport'
+import { fonts, radius, textSize } from '../theme'
 import { BranchPickerModal } from './BranchPickerModal'
 
 function branchNameForCode(code: string): string {
@@ -28,69 +28,72 @@ export function PassportCard() {
 
   return (
     <>
-      <View style={[styles.card, { borderRadius: radius.lg }]}>
-        <View style={[styles.cardTop, { backgroundColor: theme.tplBlue }]}>
-          <Text style={styles.libraryName}>Toronto Public Library</Text>
-        </View>
+      <View style={[styles.shadow, { borderRadius: radius.lg }]}>
+        <View style={[styles.card, { borderRadius: radius.lg }]}>
+          <View style={[styles.sideBorders, { borderColor: theme.tplBlue, borderRadius: radius.lg }]} pointerEvents="none" />
+          <View style={[styles.cardTop, { backgroundColor: theme.tplBlue }]}>
+            <Text style={styles.libraryName}>Toronto Public Library</Text>
+          </View>
 
-        <View style={[styles.cardBody, { backgroundColor: theme.bg }]}>
-          <View style={styles.profileRow}>
-            <View style={styles.profileFields}>
-              <View>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Name / Nom</Text>
-                <TextInput
-                  style={[styles.nameInput, { color: theme.tplBlue, fontFamily: fonts.display, borderBottomColor: theme.borderSoft }]}
-                  value={profile.name}
-                  onChangeText={name => updateProfile({ name })}
-                  placeholder="Your name"
-                  placeholderTextColor={theme.textMuted}
-                  maxLength={40}
-                />
+          <View style={[styles.cardBody, { backgroundColor: theme.bg }]}>
+            <View style={styles.profileRow}>
+              <View style={styles.profileFields}>
+                <View>
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Name / Nom</Text>
+                  <TextInput
+                    style={[styles.nameInput, { color: theme.tplBlue, fontFamily: fonts.display, borderBottomColor: theme.borderSoft }]}
+                    value={profile.name}
+                    onChangeText={name => updateProfile({ name })}
+                    placeholder="Your name"
+                    placeholderTextColor={theme.textMuted}
+                    maxLength={40}
+                  />
+                </View>
+                <View>
+                  <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Home Branch</Text>
+                  <TouchableOpacity onPress={() => branchPickerRef.current?.present()}>
+                    <Text style={[styles.fieldValue, { color: profile.homeBranch ? theme.tplBlue : theme.textMuted }]} numberOfLines={1}>
+                      {profile.homeBranch ? branchNameForCode(profile.homeBranch) : 'Tap to set'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View>
-                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Home Branch</Text>
-                <TouchableOpacity onPress={() => branchPickerRef.current?.present()}>
-                  <Text style={[styles.fieldValue, { color: profile.homeBranch ? theme.tplBlue : theme.textMuted }]} numberOfLines={1}>
-                    {profile.homeBranch ? branchNameForCode(profile.homeBranch) : 'Tap to set'}
-                  </Text>
-                </TouchableOpacity>
+              <View style={[styles.avatar, { borderColor: theme.tplBlue, backgroundColor: `${theme.tplBlue}1a` }]}>
+                <Text style={[styles.avatarLetter, { color: theme.tplBlue, fontFamily: fonts.display }]}>
+                  {avatarLetter}
+                </Text>
               </View>
             </View>
-            <View style={[styles.avatar, { borderColor: theme.tplBlue, backgroundColor: `${theme.tplBlue}1a` }]}>
-              <Text style={[styles.avatarLetter, { color: theme.tplBlue, fontFamily: fonts.display }]}>
-                {avatarLetter}
-              </Text>
+
+            <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
+              <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${progressPct}%` as any }]} />
+            </View>
+
+            <View style={styles.statsRow}>
+              <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
+                <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{checkIns.length}</Text>
+                <Text style={[styles.statLabel, { color: theme.textMuted }]}>Visits</Text>
+              </View>
+              <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
+                <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{progressPct}%</Text>
+                <Text style={[styles.statLabel, { color: theme.textMuted }]}>Complete</Text>
+              </View>
+              <View style={[styles.countChip, { backgroundColor: theme.borderSoft, borderColor: theme.border }]}>
+                <Text style={[styles.countChipNum, { color: theme.tplNavy, fontFamily: fonts.display }]}>{visitCount}</Text>
+                <Text style={[styles.countChipDenom, { color: theme.textMuted }]}>/ {physicalBranches.length}</Text>
+              </View>
             </View>
           </View>
 
-          <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
-            <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${progressPct}%` as any }]} />
-          </View>
-
-          <View style={styles.statsRow}>
-            <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
-              <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{checkIns.length}</Text>
-              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Visits</Text>
+          <View style={[styles.mrz, { backgroundColor: theme.tplBlue }]}>
+            <View style={styles.mrzLines}>
+              <Text style={styles.mrzLine} numberOfLines={1} adjustsFontSizeToFit>{mrzLine1}</Text>
+              <Text style={styles.mrzLine} numberOfLines={1} adjustsFontSizeToFit>{mrzLine2}</Text>
             </View>
-            <View style={[styles.stat, { borderRightColor: theme.borderSoft }]}>
-              <Text style={[styles.statNum, { color: theme.tplBlue, fontFamily: fonts.display }]}>{progressPct}%</Text>
-              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Complete</Text>
+            <View style={styles.mrzIssued}>
+              <Text style={styles.mrzIssuedLabel}>Issued</Text>
+              <Text style={[styles.mrzIssuedYear, { fontFamily: fonts.display }]}>{issueYear}</Text>
             </View>
-            <View style={[styles.countChip, { backgroundColor: theme.borderSoft, borderColor: theme.border }]}>
-              <Text style={[styles.countChipNum, { color: theme.tplNavy, fontFamily: fonts.display }]}>{visitCount}</Text>
-              <Text style={[styles.countChipDenom, { color: theme.textMuted }]}>/ {physicalBranches.length}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.mrz, { backgroundColor: theme.tplBlue }]}>
-          <View style={styles.mrzLines}>
-            <Text style={styles.mrzLine} numberOfLines={1} adjustsFontSizeToFit>{mrzLine1}</Text>
-            <Text style={styles.mrzLine} numberOfLines={1} adjustsFontSizeToFit>{mrzLine2}</Text>
-          </View>
-          <View style={styles.mrzIssued}>
-            <Text style={styles.mrzIssuedLabel}>Issued</Text>
-            <Text style={[styles.mrzIssuedYear, { fontFamily: fonts.display }]}>{issueYear}</Text>
           </View>
         </View>
       </View>
@@ -105,13 +108,25 @@ export function PassportCard() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    overflow: 'hidden',
+  sideBorders: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0.25,
+    right: 0.125,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    zIndex: 1,
+  },
+  shadow: {
     shadowColor: '#001c71',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  card: {
+    overflow: 'hidden',
   },
   cardTop: {
     paddingHorizontal: 18,

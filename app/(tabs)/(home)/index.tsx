@@ -1,6 +1,7 @@
 import { ScrollView, View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
+import { HomeBadgesStrip } from '@/src/components/HomeBadgesStrip'
 import { PassportCard } from '@/src/components/PassportCard'
 import { RecentVisits } from '@/src/components/RecentVisits'
 import { fonts, textSize } from '@/src/theme'
@@ -29,6 +30,7 @@ export default function HomeScreen() {
         >
           <PassportCard />
           <RecentVisits />
+          <HomeBadgesStrip />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

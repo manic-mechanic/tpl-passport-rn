@@ -1,13 +1,16 @@
-import { forwardRef, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import * as Location from 'expo-location'
+import { forwardRef, useState } from 'react'
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { BottomSheetModal, BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
-import { sortedBranches } from '../composables/useRegion'
 import { fonts, radius, textSize } from '../theme'
+import type { Branch } from '../types'
 
 interface Props {
+
   selectedCode: string
   onSelect: (code: string) => void
 }
@@ -17,6 +20,7 @@ export const BranchPickerModal = forwardRef<BottomSheetModal, Props>(
     const theme = useTheme()
     const insets = useSafeAreaInsets()
     const [search, setSearch] = useState('')
+    const [locating, setLocating] = useState(false)
 
     const filteredBranches = search.trim()
       ? sortedBranches.filter(b => b.BranchName.toLowerCase().includes(search.toLowerCase()))
@@ -26,6 +30,24 @@ export const BranchPickerModal = forwardRef<BottomSheetModal, Props>(
       onSelect(code)
       if (ref && typeof ref !== 'function') {
         ref.current?.dismiss()
+      }
+    }
+
+    async function handleUseLocation() {
+      setLocating(true)
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync()
+        const granted = status === 'granted'
+          ? true
+          : (await Location.requestForegroundPermissionsAsync()).status === 'granted'
+        if (!granted) return
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        const nearest = sortedBranches
+          .map(b => ({ b, d: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
+          .sort((a, b) => a.d - b.d)[0]
+        if (nearest) handleSelect(nearest.b.BranchCode)
+      } finally {
+        setLocating(false)
       }
     }
 
@@ -40,9 +62,20 @@ export const BranchPickerModal = forwardRef<BottomSheetModal, Props>(
       >
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>
-            Home Branch
+            Select your Home Branch
           </Text>
         </View>
+        <TouchableOpacity
+          style={[styles.locationRow, { borderBottomColor: theme.border }]}
+          onPress={handleUseLocation}
+          disabled={locating}
+        >
+          {locating
+            ? <ActivityIndicator size="small" color={theme.tplBlue} />
+            : <Ionicons name="locate-outline" size={18} color={theme.tplBlue} />
+          }
+          <Text style={[styles.locationText, { color: theme.tplBlue }]}>Use my Location</Text>
+        </TouchableOpacity>
         <View style={[styles.searchRow, { backgroundColor: theme.borderSoft, borderColor: theme.border }]}>
           <Ionicons name="search-outline" size={18} color={theme.textMuted} />
           <BottomSheetTextInput
@@ -57,9 +90,14 @@ export const BranchPickerModal = forwardRef<BottomSheetModal, Props>(
         </View>
         <BottomSheetFlatList
           data={filteredBranches}
-          keyExtractor={item => item.BranchCode}
+          keyExtractor={(item: Branch) => item.BranchCode}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => {
+          ListEmptyComponent={
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+              No branches match "{search}"
+            </Text>
+          }
+          renderItem={({ item }: { item: Branch }) => {
             const selected = selectedCode === item.BranchCode
             return (
               <TouchableOpacity
@@ -89,8 +127,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 8,
+    paddingBottom: 14,
     borderBottomWidth: 1,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  locationText: {
+    fontSize: textSize.base,
+    fontWeight: '600',
   },
   title: {
     fontSize: textSize.xl,
@@ -124,5 +175,11 @@ const styles = StyleSheet.create({
     fontSize: textSize.base,
     fontWeight: '500',
     flex: 1,
+  },
+  emptyText: {
+    fontSize: textSize.md,
+    textAlign: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
   },
 })
