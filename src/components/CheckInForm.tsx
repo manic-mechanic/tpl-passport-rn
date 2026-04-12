@@ -101,7 +101,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
         .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
         .sort((a, b) => a.distKm - b.distKm)[0]
       if (hasVisitedToday(nearest.BranchCode)) {
-        showAlreadyVisitedAlert(nearest.BranchCode, () => setShowPicker(true))
+        setShowPicker(true)
       } else {
         setSelectedCode(nearest.BranchCode)
       }
