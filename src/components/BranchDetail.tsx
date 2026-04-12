@@ -1,9 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
-  ActivityIndicator, Image, Linking, Modal, StyleSheet, Text,
-  TextInput, TouchableOpacity, View,
+  ActivityIndicator, Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { formatDist, haversineKm, physicalBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
@@ -11,6 +10,7 @@ import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch, CheckIn } from '../types'
+import { NoteEditSheet, type NoteEditSheetMethods } from './NoteEditSheet'
 import { StampShape } from './StampShape'
 import branchHoursData from '../data/branch-hours.json'
 
@@ -182,95 +182,109 @@ const evtStyles = StyleSheet.create({
 // ─── VisitRow ─────────────────────────────────────────────────────────────────
 // Extracted as a component so hooks (usePhotoPicker, useState) work per-row.
 
-function VisitRow({ visit, onPhotoTap }: { visit: CheckIn; onPhotoTap: (uri: string) => void }) {
+function formatVisitDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-CA', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+  })
+}
+
+function VisitRow({
+  visit,
+  onPhotoTap,
+  onEditNote,
+}: {
+  visit: CheckIn
+  onPhotoTap: (uri: string) => void
+  onEditNote: (visit: CheckIn) => void
+}) {
   const theme = useTheme()
-  const updateCheckIn = usePassportStore(s => s.updateCheckIn)
   const { pickPhoto, takePhoto, uploading } = usePhotoPicker(visit.timestamp)
-  const [noteText, setNoteText] = useState(visit.note)
-
-  // Sync if store is updated externally (e.g. sync)
-  useEffect(() => { setNoteText(visit.note) }, [visit.note])
-
-  function saveNote() {
-    if (noteText !== visit.note) updateCheckIn(visit.timestamp, { note: noteText })
-  }
-
-  function formatVisitDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-CA', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-    })
-  }
+  const hasNote = !!visit.note
 
   return (
     <View style={[vstyles.row, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-      <Text style={[vstyles.date, { color: theme.textPrimary }]}>
-        {formatVisitDate(visit.timestamp)}
-      </Text>
+      {/* Left: date + note preview */}
+      <View style={vstyles.left}>
+        <Text style={[vstyles.date, { color: theme.textPrimary }]} numberOfLines={1}>
+          {formatVisitDate(visit.timestamp)}
+        </Text>
+        {hasNote && (
+          <Text style={[vstyles.notePreview, { color: theme.textMuted }]} numberOfLines={1}>
+            {visit.note}
+          </Text>
+        )}
+      </View>
 
-      {/* Photo area */}
-      {visit.photoUri ? (
-        <TouchableOpacity onPress={() => onPhotoTap(visit.photoUri!)} activeOpacity={0.85}>
-          <Image source={{ uri: visit.photoUri }} style={vstyles.photoThumb} resizeMode="cover" />
+      {/* Right: note icon + photo/add-photo */}
+      <View style={vstyles.right}>
+        <TouchableOpacity onPress={() => onEditNote(visit)} hitSlop={8}>
+          <Ionicons
+            name={hasNote ? 'document-text' : 'document-text-outline'}
+            size={18}
+            color={hasNote ? theme.tplBlue : theme.textMuted}
+          />
         </TouchableOpacity>
-      ) : uploading ? (
-        <ActivityIndicator size="small" color={theme.textMuted} style={{ marginTop: 6 }} />
-      ) : (
-        <View style={vstyles.addPhotoBtns}>
-          <TouchableOpacity onPress={takePhoto} hitSlop={6}>
-            <Ionicons name="camera-outline" size={16} color={theme.textMuted} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={pickPhoto} hitSlop={6}>
-            <Ionicons name="image-outline" size={16} color={theme.textMuted} />
-          </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Note */}
-      <TextInput
-        style={[vstyles.noteInput, { color: theme.textPrimary, borderColor: theme.borderSoft }]}
-        value={noteText}
-        onChangeText={setNoteText}
-        onBlur={saveNote}
-        placeholder="Add a note…"
-        placeholderTextColor={theme.textMuted}
-        multiline
-        returnKeyType="done"
-        blurOnSubmit
-      />
+        {visit.photoUri ? (
+          <TouchableOpacity onPress={() => onPhotoTap(visit.photoUri!)} activeOpacity={0.85}>
+            <Image source={{ uri: visit.photoUri }} style={vstyles.photoThumb} resizeMode="cover" />
+          </TouchableOpacity>
+        ) : uploading ? (
+          <ActivityIndicator size="small" color={theme.textMuted} />
+        ) : (
+          <View style={vstyles.addPhotoBtns}>
+            <TouchableOpacity onPress={takePhoto} hitSlop={6}>
+              <Ionicons name="camera-outline" size={18} color={theme.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={pickPhoto} hitSlop={6}>
+              <Ionicons name="image-outline" size={18} color={theme.textMuted} />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   )
 }
 
 const vstyles = StyleSheet.create({
   row: {
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: radius.sm,
     borderWidth: 1,
     marginBottom: 6,
-    gap: 6,
+    gap: 10,
+    minHeight: 52,
+  },
+  left: {
+    flex: 1,
+    gap: 2,
   },
   date: {
     fontSize: textSize.sm,
     fontWeight: '600',
   },
+  notePreview: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
   photoThumb: {
-    width: '100%',
-    height: 140,
-    borderRadius: radius.sm - 2,
-    marginTop: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 4,
   },
   addPhotoBtns: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 2,
-  },
-  noteInput: {
-    fontSize: textSize.sm,
-    lineHeight: 18,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 6,
-    marginTop: 2,
-    minHeight: 28,
+    gap: 6,
+    alignItems: 'center',
   },
 })
 
@@ -288,6 +302,11 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
   const hasVisited = usePassportStore(s => s.hasVisited)
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
   const [lightboxUri, setLightboxUri] = useState<string | null>(null)
+  const noteSheetRef = useRef<NoteEditSheetMethods>(null)
+
+  function openNoteSheet(visit: CheckIn) {
+    noteSheetRef.current?.present(visit)
+  }
 
   const visited = hasVisited(branch.BranchCode)
   const visitedToday = hasVisitedToday(branch.BranchCode)
@@ -365,7 +384,7 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Your visits here</Text>
           {pastVisits.map(visit => (
-            <VisitRow key={visit.timestamp} visit={visit} onPhotoTap={setLightboxUri} />
+            <VisitRow key={visit.timestamp} visit={visit} onPhotoTap={setLightboxUri} onEditNote={openNoteSheet} />
           ))}
         </View>
       )}
@@ -393,6 +412,9 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
           ))}
         </View>
       )}
+
+      {/* Note edit sheet */}
+      <NoteEditSheet ref={noteSheetRef} />
 
       {/* Photo lightbox */}
       <Modal visible={!!lightboxUri} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>

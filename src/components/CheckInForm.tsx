@@ -1,18 +1,22 @@
-import { useState, useCallback } from 'react'
-import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  ScrollView, ActivityIndicator,
-} from 'react-native'
-import { useFocusEffect } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Location from 'expo-location'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import * as Location from 'expo-location'
+import { useFocusEffect } from 'expo-router'
+import { useCallback, useState } from 'react'
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput, TouchableOpacity,
+  View,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
-import { sortedBranches, haversineKm } from '../composables/useRegion'
-import { StampShape } from './StampShape'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch } from '../types'
+import { StampShape } from './StampShape'
 
 const FALLBACK_CODE = 'TRL' // shown when GPS is unavailable
 const MAX_CHECKIN_DISTANCE_KM = 0.1 // must be within 100 m to check in
@@ -43,8 +47,8 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
 
   const pickerResults: Branch[] = pickerSearch.trim()
     ? sortedBranches.filter(b =>
-        b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
-      ).slice(0, 8)
+      b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
+    ).slice(0, 8)
     : sortedBranches.slice(0, 8)
 
   useFocusEffect(
@@ -103,7 +107,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
         const km = haversineKm(pos.coords.latitude, pos.coords.longitude, selectedBranch.Lat, selectedBranch.Long)
         if (km > MAX_CHECKIN_DISTANCE_KM) {
           const dist = km >= 1 ? `${km.toFixed(1)} km` : `${Math.round(km * 1000)} m`
-          setLocationError(`You're ${dist} away — you need to be within 100 m to check in.`)
+          setLocationError(`You're ${dist} away — you must be within 100m to check in.`)
           return
         }
       } catch (err: any) {
@@ -138,7 +142,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
           {detecting
             ? 'Detecting your location…'
             : selectedBranch
-              ? `Nearest branch — ${selectedBranch.BranchName}`
+              ? `Closest branch — ${selectedBranch.BranchName}`
               : 'Select the branch you\'re visiting'}
         </Text>
         {locationError && (

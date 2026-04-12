@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { authClient } from '@/src/lib/auth-client'
@@ -103,7 +104,7 @@ export default function SettingsScreen() {
       <View style={styles.group}>
         <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Developer</Text>
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-          <View style={styles.settingRow}>
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
             <View style={styles.labelWrap}>
               <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Location check</Text>
               <Text style={[styles.settingHint, { color: theme.textMuted }]}>
@@ -130,6 +131,26 @@ export default function SettingsScreen() {
               ))}
             </View>
           </View>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() =>
+                Alert.alert('Reset all data', 'Wipes local store and signs out. Cannot be undone.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Reset',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await authClient.signOut()
+                      await AsyncStorage.clear().catch(() => {})
+                    },
+                  },
+                ])
+              }
+            >
+              <Text style={[styles.settingLabel, { color: '#c0392b' }]}>Reset all data</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 

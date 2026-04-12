@@ -20,7 +20,7 @@ export function CheckInSuccess({ branch, timestamp, onDone }: Props) {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const photoUri = usePassportStore(s => s.checkIns.find(c => c.timestamp === timestamp)?.photoUri)
-  const { pickPhoto, uploading, error } = usePhotoPicker(timestamp)
+  const { pickPhoto, takePhoto, uploading, error } = usePhotoPicker(timestamp)
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -47,20 +47,30 @@ export function CheckInSuccess({ branch, timestamp, onDone }: Props) {
               </View>
             </View>
           ) : (
-            <TouchableOpacity
-              style={[styles.photoBtn, { borderColor: theme.border }]}
-              onPress={pickPhoto}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <ActivityIndicator size="small" color={theme.tplBlue} />
-              ) : (
-                <Ionicons name="camera-outline" size={18} color={theme.tplBlue} />
-              )}
-              <Text style={[styles.photoBtnText, { color: theme.tplBlue }]}>
-                {uploading ? 'Saving…' : 'Add a photo'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.photoBtnRow}>
+              <TouchableOpacity
+                style={[styles.photoBtn, { borderColor: theme.border }]}
+                onPress={takePhoto}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={theme.tplBlue} />
+                ) : (
+                  <Ionicons name="camera-outline" size={18} color={theme.tplBlue} />
+                )}
+                <Text style={[styles.photoBtnText, { color: theme.tplBlue }]}>
+                  {uploading ? 'Saving…' : 'Take photo'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.photoBtn, { borderColor: theme.border }]}
+                onPress={pickPhoto}
+                disabled={uploading}
+              >
+                <Ionicons name="image-outline" size={18} color={theme.tplBlue} />
+                <Text style={[styles.photoBtnText, { color: theme.tplBlue }]}>Choose</Text>
+              </TouchableOpacity>
+            </View>
           )}
           {error ? (
             <Text style={[styles.photoError, { color: theme.textMuted }]}>{error}</Text>
@@ -109,6 +119,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 6,
     minHeight: 44,
+  },
+  photoBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   photoBtn: {
     flexDirection: 'row',

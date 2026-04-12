@@ -14,7 +14,14 @@
       "WebFetch(domain:www.better-auth.com)",
       "Bash(find /Users/benny/Documents/repos/tpl-passport-rn -maxdepth 2 -not -path */node_modules/* -not -path */.git/*)",
       "Bash(ls \"app/\\(tabs\\)/two.tsx\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx expo:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:ishan.page)",
+      "Bash(find /Users/benny/Documents/repos/tpl-passport/app -type d -not -path */node_modules/* -not -path */.output/*)",
+      "Bash(gh issue:*)",
+      "Bash(wc -l app/components/*.vue)"
     ]
   }
 }

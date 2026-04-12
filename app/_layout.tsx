@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -13,6 +13,7 @@ import { colors, dark } from '@/src/theme';
 import { authClient } from '@/src/lib/auth-client';
 import { usePassportStore } from '@/src/stores/passport';
 import { migrateLocalPhotos } from '@/src/lib/upload';
+import { syncCheckIns, fetchProfile } from '@/src/lib/sync';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -60,13 +61,26 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const navyBg = colorScheme === 'dark' ? dark.tplNavy : colors.tplNavy;
   const { data: session } = authClient.useSession();
-  const checkIns = usePassportStore(s => s.checkIns);
-  const setCheckInPhoto = usePassportStore(s => s.setCheckInPhoto);
 
-  // When the user signs in, migrate any locally-stored photos to R2.
+  // When the user signs in, sync check-ins with server and migrate local photos to R2.
   useEffect(() => {
     if (!session?.user) return;
+    const { checkIns, setCheckIns, setCheckInPhoto, updateProfile } = usePassportStore.getState();
+    syncCheckIns(checkIns, setCheckIns);
     migrateLocalPhotos(checkIns, setCheckInPhoto);
+    fetchProfile().then(p => {
+      if (!p) return;
+      const { profile, updateProfile } = usePassportStore.getState();
+      if (p.name || p.homeBranch) {
+        // Server has data → server wins
+        updateProfile({ name: p.name, homeBranch: p.homeBranch });
+      } else if (profile.name || profile.homeBranch) {
+        // Server is empty, local has data → push local up
+        import('@/src/lib/sync').then(({ pushProfile }) =>
+          pushProfile(profile.name, profile.homeBranch).catch(() => {})
+        );
+      }
+    }).catch(() => {});
   }, [session?.user?.id]);
 
   return (
