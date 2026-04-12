@@ -40,7 +40,7 @@ export function BadgeCard({ badge, ctx }: Props) {
               <View
                 style={[
                   styles.progressFill,
-                  { backgroundColor: theme.textMuted, width: `${Math.min(100, Math.round((current / total) * 100))}%` as any },
+                  { backgroundColor: theme.textMuted, width: `${Math.min(100, Math.round((current / total) * 100))}%` },
                 ]}
               />
             </View>

@@ -186,8 +186,6 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  modeSwitch: {
-  },
   content: {
     paddingHorizontal: 20,
     paddingTop: 24,

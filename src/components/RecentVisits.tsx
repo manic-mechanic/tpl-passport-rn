@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { physicalBranches } from '../composables/useRegion'
@@ -23,7 +23,11 @@ function DashedSeparator({ color }: { color: string }) {
 const GHOST_CODES = ['GH4', 'GH5', 'GH1']
 const GHOST_WARDS = [5, 9, 3]
 
-export function RecentVisits() {
+interface Props {
+  onSeeAll?: () => void
+}
+
+export function RecentVisits({ onSeeAll }: Props = {}) {
   const theme = useTheme()
   const router = useRouter()
   const checkIns = usePassportStore(s => s.checkIns)
@@ -50,7 +54,7 @@ export function RecentVisits() {
           Recent Visits
         </Text>
         {recentEntries.length > 0 && (
-          <TouchableOpacity onPress={() => router.push('/(tabs)/(passport)')}>
+          <TouchableOpacity onPress={() => onSeeAll ? onSeeAll() : router.push('/(tabs)/(passport)' as Href)}>
             <Text style={[styles.seeAll, { color: theme.tplBlue }]}>See all</Text>
           </TouchableOpacity>
         )}
@@ -80,7 +84,7 @@ export function RecentVisits() {
               <View style={styles.stampSlot}>
                 <TouchableOpacity
                   style={styles.stampTouchable}
-                  onPress={() => router.push(`./branch/${item.branch.BranchCode}` as any)}
+                  onPress={() => router.push({ pathname: './branch/[id]', params: { id: item.branch.BranchCode } })}
                 >
                   <View style={styles.stampArea}>
                     <StampShape branchCode={item.branch.BranchCode} wardNo={item.branch.WardNo} size={62} />

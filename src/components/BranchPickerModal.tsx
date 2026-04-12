@@ -4,7 +4,7 @@ import * as Location from 'expo-location'
 import { forwardRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { haversineKm, sortedBranches } from '../composables/useRegion'
+import { filterBranches, haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch } from '../types'
@@ -22,9 +22,7 @@ export const BranchPickerModal = forwardRef<BottomSheetModal, Props>(
     const [search, setSearch] = useState('')
     const [locating, setLocating] = useState(false)
 
-    const filteredBranches = search.trim()
-      ? sortedBranches.filter(b => b.BranchName.toLowerCase().includes(search.toLowerCase()))
-      : sortedBranches
+    const filteredBranches = filterBranches(search)
 
     function handleSelect(code: string) {
       onSelect(code)

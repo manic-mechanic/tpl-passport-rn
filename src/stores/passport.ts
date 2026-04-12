@@ -78,11 +78,13 @@ export const usePassportStore = create<PassportStore>()(
           )
         })),
       updateProfile: (patch) => {
+        const current = get().profile
         set(s => ({ profile: { ...s.profile, ...patch } }))
         if ('name' in patch || 'homeBranch' in patch) {
-          const updated = { ...get().profile, ...patch }
+          const name = 'name' in patch ? patch.name! : current.name
+          const homeBranch = 'homeBranch' in patch ? patch.homeBranch! : current.homeBranch
           import('../lib/sync').then(({ pushProfile }) =>
-            pushProfile(updated.name, updated.homeBranch).catch(() => {})
+            pushProfile(name, homeBranch).catch(() => {})
           )
         }
       },

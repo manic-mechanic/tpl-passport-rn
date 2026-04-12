@@ -85,7 +85,7 @@ export function PassportCard() {
             </View>
 
             <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
-              <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${progressPct}%` as any }]} />
+              <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${progressPct}%` }]} />
             </View>
 
             <View style={styles.statsRow}>

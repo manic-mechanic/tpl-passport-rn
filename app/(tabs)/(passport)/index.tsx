@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
-import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
+import { BADGE_DISPLAY_ORDER, BADGES, useBadgeCtx } from '@/src/composables/useBadges'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { BadgeCard } from '@/src/components/BadgeCard'
@@ -14,15 +14,6 @@ import { fonts, textSize } from '@/src/theme'
 import type { Branch } from '@/src/types'
 import type { AlphaPage } from '@/src/composables/useRegion'
 import type { Badge } from '@/src/composables/useBadges'
-
-const BADGE_DISPLAY_ORDER = [
-  'first', 'day_tripper',
-  'archivist', 'navigator',
-  'explorer', 'familiar_face',
-  'adventurer', 'page_filler',
-  'globetrotter', 'page_turner',
-  'complete', 'return_visitor',
-]
 
 export default function PassportScreen() {
   const theme = useTheme()
@@ -82,7 +73,7 @@ export default function PassportScreen() {
   }
 
   function openBranch(branch: Branch) {
-    router.push(`./branch/${branch.BranchCode}` as any)
+    router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })
   }
 
   const stampData = useMemo<(Branch | { BranchCode: string; _phantom: true })[]>(() => {
@@ -227,7 +218,7 @@ export default function PassportScreen() {
       <ScreenHeader
         title="My Passport"
         rightAction={
-          <TouchableOpacity onPress={() => router.push('./history' as any)} hitSlop={8}>
+          <TouchableOpacity onPress={() => router.push('./history')} hitSlop={8}>
             <Text style={styles.allVisitsLink}>All visits</Text>
           </TouchableOpacity>
         }

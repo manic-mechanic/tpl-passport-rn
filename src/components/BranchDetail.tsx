@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useRouter, useSegments } from 'expo-router'
-import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator, Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
@@ -61,7 +61,7 @@ function formatEventMonth(date: string): string {
   return new Date(date + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short' }).toUpperCase()
 }
 
-function filterToWindow(records: any[]) {
+function filterToWindow(records: CkanEvent[]) {
   const today = new Date().toISOString().slice(0, 10)
   const tomorrow = new Date(Date.now() + MS_PER_DAY).toISOString().slice(0, 10)
   return records
@@ -71,20 +71,34 @@ function filterToWindow(records: any[]) {
 
 // ─── EventsSection ────────────────────────────────────────────────────────────
 
+interface CkanEvent {
+  _id: number | string
+  EventName?: string
+  'Event Name'?: string
+  Title?: string
+  StartDateLocal: string
+  StartTime?: string
+  Audiences?: string
+  AgeGroup?: string
+  'Age Group'?: string
+}
+
 function EventsSection({ branchName, branchWebsite }: { branchName: string; branchWebsite: string }) {
   const theme = useTheme()
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<CkanEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const ac = new AbortController()
     const shortName = branchName.replace(/ Branch$/i, '')
     const filters = JSON.stringify({ LocationName: shortName })
     const url = `${CKAN}/datastore_search?id=${EVENTS_RESOURCE}&filters=${encodeURIComponent(filters)}&limit=100&sort=StartDateLocal%20desc`
-    fetch(url)
+    fetch(url, { signal: ac.signal })
       .then(r => r.json())
       .then(data => setEvents(filterToWindow(data.result?.records ?? [])))
-      .catch(() => setEvents([]))
+      .catch(err => { if (!(err instanceof Error && err.name === 'AbortError')) setEvents([]) })
       .finally(() => setLoading(false))
+    return () => ac.abort()
   }, [branchName])
 
   return (
@@ -96,7 +110,7 @@ function EventsSection({ branchName, branchWebsite }: { branchName: string; bran
       ) : events.length === 0 ? (
         <Text style={[evtStyles.empty, { color: theme.textMuted }]}>No events today or tomorrow.</Text>
       ) : (
-        events.map((e: any) => {
+        events.map((e) => {
           const title = e.EventName ?? e['Event Name'] ?? e.Title ?? 'Event'
           const time = formatEventTime(e.StartTime ?? '')
           const age = formatAudiences(e.Audiences ?? e.AgeGroup ?? e['Age Group'] ?? '')
@@ -285,13 +299,13 @@ const vstyles = StyleSheet.create({
 
 interface Props {
   branch: Branch
+  origin?: 'explore' | 'passport'
   onNearbyPress?: (branchCode: string) => void
 }
 
-export function BranchDetail({ branch, onNearbyPress }: Props) {
+export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
   const theme = useTheme()
   const router = useRouter()
-  const segments = useSegments()
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
@@ -310,14 +324,14 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
   const todayHours = branchHours[branch.BranchCode]?.[DAYS[new Date().getDay()]] ?? null
   const hasParking = branch.PublicParking && branch.PublicParking !== '0' && branch.PublicParking !== 0
 
-  const nearbyBranches = (() => {
+  const nearbyBranches = useMemo(() => {
     if (!branch.Lat || !branch.Long) return []
     return physicalBranches
       .filter(b => b.BranchCode !== branch.BranchCode)
       .map(b => ({ ...b, distKm: haversineKm(branch.Lat, branch.Long, b.Lat, b.Long) }))
       .sort((a, b) => a.distKm - b.distKm)
       .slice(0, 2)
-  })()
+  }, [branch.BranchCode])
 
   return (
     <View style={styles.container}>
@@ -365,10 +379,10 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
           <TouchableOpacity
             style={[styles.checkInBtn, { backgroundColor: theme.tplBlue }]}
             onPress={() => {
-                const tab = segments.find(s => s === '(explore)' || s === '(passport)')
-                const origin = tab === '(explore)' ? 'explore' : tab === '(passport)' ? 'passport' : undefined
-                const params = origin ? `branch=${branch.BranchCode}&origin=${origin}` : `branch=${branch.BranchCode}`
-                router.navigate(`/(tabs)/(check-in)?${params}` as any)
+                router.navigate({
+                  pathname: '/(tabs)/(check-in)',
+                  params: origin ? { branch: branch.BranchCode, origin } : { branch: branch.BranchCode },
+                })
               }}
           >
             <Text style={styles.checkInBtnText}>
@@ -399,7 +413,7 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
             <TouchableOpacity
               key={nb.BranchCode}
               style={[styles.nearbyRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
-              onPress={() => onNearbyPress ? onNearbyPress(nb.BranchCode) : router.push(`/branch/${nb.BranchCode}` as any)}
+              onPress={() => onNearbyPress ? onNearbyPress(nb.BranchCode) : router.push({ pathname: '/branch/[id]', params: { id: nb.BranchCode } })}
             >
               <StampShape branchCode={nb.BranchCode} wardNo={nb.WardNo} size={36} />
               <View style={styles.nearbyInfo}>

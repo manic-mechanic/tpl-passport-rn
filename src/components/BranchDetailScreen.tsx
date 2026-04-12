@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useRef } from 'react'
+import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { useLocalSearchParams, useRouter, useSegments } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/src/hooks/useTheme'
 import { sortedBranches } from '@/src/composables/useRegion'
@@ -12,16 +12,20 @@ export default function BranchDetailScreen() {
   const theme = useTheme()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const segments = useSegments()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const [currentId, setCurrentId] = useState(id)
   const scrollRef = useRef<ScrollView>(null)
 
+  const tab = segments.find(s => s === '(explore)' || s === '(passport)')
+  const origin: 'explore' | 'passport' | undefined =
+    tab === '(explore)' ? 'explore' : tab === '(passport)' ? 'passport' : undefined
+
   function navigateToNearby(code: string) {
-    setCurrentId(code)
+    router.replace({ pathname: './branch/[id]', params: { id: code } })
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }
 
-  const branch = sortedBranches.find(b => b.BranchCode === currentId) ?? null
+  const branch = sortedBranches.find(b => b.BranchCode === id) ?? null
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -34,7 +38,7 @@ export default function BranchDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {branch ? (
-          <BranchDetail branch={branch} onNearbyPress={navigateToNearby} />
+          <BranchDetail branch={branch} origin={origin} onNearbyPress={navigateToNearby} />
         ) : (
           <Text style={[styles.notFound, { color: theme.textMuted }]}>Branch not found.</Text>
         )}

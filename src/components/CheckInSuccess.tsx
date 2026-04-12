@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import { useMemo } from 'react'
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -48,11 +48,11 @@ export function CheckInSuccess({ branch, timestamp, origin, onDone }: Props) {
 
   function handleDone() {
     if (origin === 'explore') {
-      router.replace('/(tabs)/(explore)' as any)
+      router.replace('/(tabs)/(explore)' as Href)
     } else if (origin === 'passport') {
-      router.replace('/(tabs)/(passport)' as any)
+      router.replace('/(tabs)/(passport)' as Href)
     } else {
-      router.replace('/(tabs)/(home)' as any)
+      router.replace('/(tabs)/(home)' as Href)
     }
     onDone()
   }
@@ -119,7 +119,7 @@ export function CheckInSuccess({ branch, timestamp, origin, onDone }: Props) {
 
         <TouchableOpacity
           style={[styles.viewBranchBtn, { backgroundColor: theme.tplNavy }]}
-          onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
+          onPress={() => router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })}
         >
           <Text style={styles.viewBranchBtnText}>View branch</Text>
         </TouchableOpacity>

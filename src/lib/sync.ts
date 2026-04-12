@@ -42,8 +42,10 @@ export async function syncCheckIns(
     photo_url: string | null
   }> = await res.json()
 
+  const key = (branchCode: string, timestamp: string) => `${branchCode}:${timestamp}`
+
   const serverMap = new Map(
-    data.map(row => [row.timestamp, {
+    data.map(row => [key(row.branch_code, row.timestamp), {
       branchCode: row.branch_code,
       timestamp: row.timestamp,
       note: row.note,
@@ -51,8 +53,8 @@ export async function syncCheckIns(
     } satisfies CheckIn])
   )
 
-  const localMap = new Map(localCheckIns.map(c => [c.timestamp, c]))
-  // Server wins on conflict (same timestamp); keep local-only records too
+  const localMap = new Map(localCheckIns.map(c => [key(c.branchCode, c.timestamp), c]))
+  // Server wins on conflict (same key); keep local-only records too
   const merged = Array.from(
     new Map([...localMap, ...serverMap]).values()
   ).sort((a, b) => b.timestamp.localeCompare(a.timestamp))
@@ -60,17 +62,19 @@ export async function syncCheckIns(
   setCheckIns(merged)
 
   // Push any local-only records to server
-  const localOnly = localCheckIns.filter(c => !serverMap.has(c.timestamp))
+  const localOnly = localCheckIns.filter(c => !serverMap.has(key(c.branchCode, c.timestamp)))
   for (const ci of localOnly) {
     pushCheckIn(ci).catch(() => {})
   }
 }
 
+interface ProfileApiResponse { name: string; home_branch: string }
+
 export async function fetchProfile(): Promise<{ name: string; homeBranch: string } | null> {
   const cookie = await getAuthCookie()
   const res = await fetch(`${BASE}/api/profile`, { headers: { cookie } })
   if (!res.ok) return null
-  const { name, home_branch } = await res.json()
+  const { name, home_branch } = await res.json() as ProfileApiResponse
   return { name, homeBranch: home_branch }
 }
 

@@ -1,14 +1,15 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useRouter, type Href } from 'expo-router'
 import { useTheme } from '../hooks/useTheme'
 import { BADGES, useBadgeCtx, type Badge, type BadgeCtx } from '../composables/useBadges'
 import { fonts, textSize } from '../theme'
 import { BadgeShape } from './BadgeShape'
 
-// TODO: wire "See all" to navigate to the Explore tab's Extra Credit section
 function SeeAll() {
   const theme = useTheme()
+  const router = useRouter()
   return (
-    <TouchableOpacity onPress={() => {/* navigate to explore#extra-credit */}} hitSlop={8}>
+    <TouchableOpacity onPress={() => router.push('/(tabs)/(explore)' as Href)} hitSlop={8}>
       <Text style={[styles.seeAll, { color: theme.tplBlue }]}>See all</Text>
     </TouchableOpacity>
   )
@@ -31,7 +32,7 @@ function BadgeTile({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
             <View
               style={[
                 styles.progressFill,
-                { backgroundColor: theme.textMuted, width: `${Math.min(100, Math.round((progress.current / progress.total) * 100))}%` as any },
+                { backgroundColor: theme.textMuted, width: `${Math.min(100, Math.round((progress.current / progress.total) * 100))}%` },
               ]}
             />
           </View>

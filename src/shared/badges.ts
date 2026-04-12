@@ -125,6 +125,17 @@ export interface Badge {
   suggest: (ctx: BadgeCtx) => { pct: number; message: string; branches: Branch[] }
 }
 
+// ─── Display order (column-major, matching web BadgesSection.vue) ─────────────
+
+export const BADGE_DISPLAY_ORDER = [
+  'first',       'day_tripper',
+  'archivist',   'navigator',
+  'explorer',    'familiar_face',
+  'adventurer',  'page_filler',
+  'globetrotter','page_turner',
+  'complete',    'return_visitor',
+]
+
 // ─── Badge colors ─────────────────────────────────────────────────────────────
 
 export const BADGE_COLORS: Record<string, string> = {

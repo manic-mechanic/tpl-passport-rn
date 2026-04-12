@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import * as Location from 'expo-location'
 import { useFocusEffect } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { haversineKm, sortedBranches } from '../composables/useRegion'
+import { getErrorCode } from '../lib/errors'
+import { filterBranches, formatDist, haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
@@ -45,13 +46,16 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
   const bypassLocationFence = usePassportStore(s => s.profile.bypassLocationFence)
 
+  // Refs so useFocusEffect always calls the latest version of these without
+  // re-registering the effect on every render (detectNearest is a hoisted fn).
+  const hasVisitedTodayRef = useRef(hasVisitedToday)
+  hasVisitedTodayRef.current = hasVisitedToday
+  const detectNearestRef = useRef(detectNearest)
+  detectNearestRef.current = detectNearest
+
   const selectedBranch: Branch | null = sortedBranches.find(b => b.BranchCode === selectedCode) ?? null
 
-  const pickerResults: Branch[] = pickerSearch.trim()
-    ? sortedBranches.filter(b =>
-      b.BranchName.toLowerCase().includes(pickerSearch.toLowerCase())
-    )
-    : sortedBranches
+  const pickerResults: Branch[] = filterBranches(pickerSearch)
 
   useFocusEffect(
     useCallback(() => {
@@ -61,15 +65,15 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
       setShowPicker(false)
       setPickerSearch('')
       if (prefillCode) {
-        if (hasVisitedToday(prefillCode)) {
-          showAlreadyVisitedAlert(prefillCode, () => detectNearest())
+        if (hasVisitedTodayRef.current(prefillCode)) {
+          showAlreadyVisitedAlert(prefillCode, () => detectNearestRef.current())
         } else {
           setSelectedCode(prefillCode)
           setDetecting(false)
         }
       } else {
         setSelectedCode('')
-        detectNearest()
+        detectNearestRef.current()
       }
     }, [prefillCode])
   )
@@ -105,9 +109,13 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
       } else {
         setSelectedCode(nearest.BranchCode)
       }
-    } catch {
-      setSelectedCode(FALLBACK_CODE)
-      setLocationError('Could not determine location — showing default branch.')
+    } catch (err) {
+      if (getErrorCode(err) === LOCATION_TIMEOUT_CODE) {
+        setLocationError('Location check timed out — try again.')
+      } else {
+        setSelectedCode(FALLBACK_CODE)
+        setLocationError('Could not determine location — showing default branch.')
+      }
     } finally {
       setDetecting(false)
     }
@@ -134,12 +142,12 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
         const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
         const km = haversineKm(pos.coords.latitude, pos.coords.longitude, selectedBranch.Lat, selectedBranch.Long)
         if (km > MAX_CHECKIN_DISTANCE_KM) {
-          const dist = km >= 1 ? `${km.toFixed(1)} km` : `${Math.round(km * 1000)} m`
+          const dist = formatDist(km)
           setCheckInError(`You're ${dist} away — you must be within 100m to check in.`)
           return
         }
-      } catch (err: any) {
-        setCheckInError(err?.code === LOCATION_TIMEOUT_CODE ? 'Location check timed out. Try again.' : 'Location access denied.')
+      } catch (err) {
+        setCheckInError(getErrorCode(err) === LOCATION_TIMEOUT_CODE ? 'Location check timed out. Try again.' : 'Location access denied.')
         return
       }
     }

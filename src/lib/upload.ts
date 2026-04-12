@@ -41,7 +41,7 @@ export async function uploadPhotoToR2(localUri: string): Promise<string> {
     throw new Error(`Upload failed: ${result.status} ${result.body}`)
   }
 
-  const { publicUrl } = JSON.parse(result.body)
+  const { publicUrl } = JSON.parse(result.body) as { publicUrl: string }
   return publicUrl
 }
 

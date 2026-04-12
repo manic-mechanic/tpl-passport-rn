@@ -61,6 +61,11 @@ export function formatDist(km: number): string {
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`
 }
 
+export function filterBranches(query: string, branches: Branch[] = sortedBranches): Branch[] {
+  const q = query.trim().toLowerCase()
+  return q ? branches.filter(b => b.BranchName.toLowerCase().includes(q)) : branches
+}
+
 export function buildMapsUrl(branches: Branch[]): string {
   return 'https://www.google.com/maps/dir/' + branches.map(b => `${b.Lat},${b.Long}`).join('/')
 }

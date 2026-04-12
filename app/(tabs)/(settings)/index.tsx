@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRef, useState } from 'react'
 import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, type Href } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
@@ -104,7 +104,7 @@ export default function SettingsScreen() {
                 </View>
               </>
             ) : (
-              <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/sign-in' as any)}>
+              <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/sign-in' as Href)}>
                 <View style={styles.labelWrap}>
                   <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Save your progress</Text>
                   <Text style={[styles.settingHint, { color: theme.textMuted }]}>

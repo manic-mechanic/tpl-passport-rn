@@ -1,16 +1,6 @@
 import { BadgeCard } from '@/src/components/BadgeCard'
 import { StampShape } from '@/src/components/StampShape'
-import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
-
-// Column-major display order matching web BadgesSection.vue
-const BADGE_DISPLAY_ORDER = [
-  'first',       'day_tripper',
-  'archivist',   'navigator',
-  'explorer',    'familiar_face',
-  'adventurer',  'page_filler',
-  'globetrotter','page_turner',
-  'complete',    'return_visitor',
-]
+import { BADGE_DISPLAY_ORDER, BADGES, useBadgeCtx } from '@/src/composables/useBadges'
 
 const MAX_VISIBLE_STAMPS = 4
 import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
@@ -105,7 +95,7 @@ export default function ExploreScreen() {
                     { borderBottomColor: theme.borderSoft },
                     i === nearBy.length - 1 && { borderBottomWidth: 0 },
                   ]}
-                  onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
+                  onPress={() => router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })}
                 >
                   <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={38} ghost={!hasVisited(branch.BranchCode)} />
                   <View style={styles.nearInfo}>
@@ -159,7 +149,7 @@ export default function ExploreScreen() {
                   {routeBranches.slice(0, MAX_VISIBLE_STAMPS).map((branch) => (
                     <TouchableOpacity
                       key={branch.BranchCode}
-                      onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
+                      onPress={() => router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })}
                       style={styles.routeStampItem}
                     >
                       <View style={styles.routeStampArea}>
