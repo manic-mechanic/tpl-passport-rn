@@ -1,7 +1,8 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
-import { BADGE_COLORS, BADGES, useBadgeCtx, type Badge, type BadgeCtx } from '../composables/useBadges'
+import { BADGES, useBadgeCtx, type Badge, type BadgeCtx } from '../composables/useBadges'
 import { fonts, textSize } from '../theme'
+import { BadgeShape } from './BadgeShape'
 
 // TODO: wire "See all" to navigate to the Explore tab's Extra Credit section
 function SeeAll() {
@@ -13,30 +14,14 @@ function SeeAll() {
   )
 }
 
-const SHAPE_RADIUS: Record<string, number> = {
-  circle:  999,
-  octagon: 10,
-  star:    3,
-}
-
 function BadgeTile({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
   const theme = useTheme()
   const earned = badge.earned(ctx)
   const progress = !earned && badge.progress ? badge.progress(ctx) : null
 
-  const color = earned ? (BADGE_COLORS[badge.id] ?? theme.tplBlue) : '#aaa'
-  const br = SHAPE_RADIUS[badge.shape] ?? 8
-  const ICON_SIZE = 40
-
   return (
     <View style={styles.tile}>
-      <View style={[styles.icon, { width: ICON_SIZE, height: ICON_SIZE, borderRadius: br, backgroundColor: color }]}>
-        {badge.label ? (
-          <Text style={[styles.iconLabel, { fontFamily: fonts.display }]}>{badge.label}</Text>
-        ) : (
-          <Text style={styles.iconLabel}>{earned ? '✓' : '·'}</Text>
-        )}
-      </View>
+      <BadgeShape badge={badge} ctx={ctx} size={40} />
       <Text style={[styles.badgeName, { color: theme.textMuted }]} numberOfLines={2}>
         {badge.title}
       </Text>
@@ -146,16 +131,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 4,
     paddingHorizontal: 2,
-  },
-  icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconLabel: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 14,
   },
   badgeName: {
     fontSize: 10,

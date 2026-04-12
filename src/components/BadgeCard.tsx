@@ -1,122 +1,92 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
-import { BADGE_COLORS, type Badge, type BadgeCtx } from '../composables/useBadges'
-import { fonts, radius, textSize } from '../theme'
+import { BADGES, type Badge, type BadgeCtx } from '../composables/useBadges'
+import { textSize } from '../theme'
+import { BadgeShape } from './BadgeShape'
 
 interface Props {
   badge: Badge
   ctx: BadgeCtx
 }
 
-const SHAPE_RADIUS: Record<string, number> = {
-  circle:  999,
-  octagon: 10,
-  star:    3,
+// Mirror web BadgesSection.vue showBadgeProgress:
+// show progress only when unearned, current > 0, and for octagons only the next stamp.
+function shouldShowProgress(badge: Badge, ctx: BadgeCtx, nextStampId: string | null): boolean {
+  if (badge.earned(ctx) || !badge.progress) return false
+  if (badge.progress(ctx).current === 0) return false
+  if (badge.shape === 'octagon') return badge.id === nextStampId
+  return true
 }
 
 export function BadgeCard({ badge, ctx }: Props) {
   const theme = useTheme()
   const earned = badge.earned(ctx)
-  const progress = badge.progress?.(ctx)
-  const earnedAt = earned && badge.earnedAt ? badge.earnedAt(ctx) : null
-  const suggest = !earned ? badge.suggest(ctx) : null
-
-  const color = earned ? (BADGE_COLORS[badge.id] ?? theme.tplBlue) : '#aaa'
-  const br = SHAPE_RADIUS[badge.shape] ?? 8
-  const ICON_SIZE = 52
+  const nextStampId = BADGES.find(b => b.shape === 'octagon' && !b.earned(ctx))?.id ?? null
+  const showProgress = shouldShowProgress(badge, ctx, nextStampId)
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: earned ? `${color}33` : theme.borderSoft }]}>
-      {/* Badge icon */}
-      <View style={[styles.icon, { width: ICON_SIZE, height: ICON_SIZE, borderRadius: br, backgroundColor: color }]}>
-        {badge.label ? (
-          <Text style={[styles.iconLabel, { fontFamily: fonts.display }]}>{badge.label}</Text>
-        ) : (
-          <Text style={styles.iconLabel}>{earned ? '✓' : '·'}</Text>
-        )}
-      </View>
+    <View style={styles.item}>
+      <BadgeShape badge={badge} ctx={ctx} size={64} />
 
-      {/* Title + desc */}
-      <Text style={[styles.title, { color: earned ? theme.textPrimary : theme.textMuted, fontFamily: fonts.display }]}>
+      <Text style={[styles.badgeName, { color: earned ? theme.textPrimary : theme.textMuted }]} numberOfLines={2}>
         {badge.title}
       </Text>
-      <Text style={[styles.desc, { color: theme.textMuted }]} numberOfLines={2}>
-        {badge.desc}
-      </Text>
 
-      {/* Earned date */}
-      {earnedAt && (
-        <Text style={[styles.earnedAt, { color: color }]}>{earnedAt}</Text>
-      )}
-
-      {/* Progress bar + hint */}
-      {!earned && suggest && (
-        <View style={styles.progressWrap}>
-          <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
-            <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${Math.round(suggest.pct * 100)}%` as any }]} />
+      {showProgress && (() => {
+        const { current, total } = badge.progress!(ctx)
+        return (
+          <View style={styles.progressRow}>
+            <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { backgroundColor: theme.textMuted, width: `${Math.min(100, Math.round((current / total) * 100))}%` as any },
+                ]}
+              />
+            </View>
+            <Text style={[styles.progressText, { color: theme.textMuted }]}>{current}/{total}</Text>
           </View>
-          {suggest.message ? (
-            <Text style={[styles.hint, { color: theme.textMuted }]} numberOfLines={2}>
-              {suggest.message}
-            </Text>
-          ) : null}
-        </View>
-      )}
+        )
+      })()}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    padding: 12,
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  icon: {
+  item: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    gap: 8,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    minHeight: 140,
   },
-  iconLabel: {
-    color: '#fff',
-    fontSize: textSize.base,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  title: {
-    fontSize: textSize.md,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  desc: {
-    fontSize: textSize.xs,
-    lineHeight: 14,
-  },
-  earnedAt: {
-    fontSize: textSize.xs,
+  badgeName: {
+    fontSize: 10,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 13,
+    letterSpacing: 0.1,
   },
-  progressWrap: {
-    width: '100%',
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
-    marginTop: 2,
   },
   progressTrack: {
-    height: 3,
+    width: 28,
+    height: 4,
     borderRadius: 2,
     overflow: 'hidden',
-    width: '100%',
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
     minWidth: 2,
   },
-  hint: {
-    fontSize: textSize.xs,
-    lineHeight: 14,
+  progressText: {
+    fontSize: 8,
+    fontWeight: '600',
+    lineHeight: 10,
   },
 })

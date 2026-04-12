@@ -1,18 +1,30 @@
-import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Location from 'expo-location'
-import Ionicons from '@expo/vector-icons/Ionicons'
+import { BadgeCard } from '@/src/components/BadgeCard'
+import { StampShape } from '@/src/components/StampShape'
+import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
+
+// Column-major display order matching web BadgesSection.vue
+const BADGE_DISPLAY_ORDER = [
+  'first',       'day_tripper',
+  'archivist',   'navigator',
+  'explorer',    'familiar_face',
+  'adventurer',  'page_filler',
+  'globetrotter','page_turner',
+  'complete',    'return_visitor',
+]
+
+const MAX_VISIBLE_STAMPS = 4
+import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
+import routesData from '@/src/data/routes.json'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
-import { sortedBranches, haversineKm } from '@/src/composables/useRegion'
-import { useBadgeCtx, BADGES } from '@/src/composables/useBadges'
-import { StampShape } from '@/src/components/StampShape'
-import { BadgeCard } from '@/src/components/BadgeCard'
 import { fonts, radius, textSize } from '@/src/theme'
-import routesData from '@/src/data/routes.json'
 import type { Branch, Route } from '@/src/types'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import * as Location from 'expo-location'
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ExploreScreen() {
   const theme = useTheme()
@@ -134,6 +146,9 @@ export default function ExploreScreen() {
                   <Text style={[styles.routeDuration, { color: theme.textMuted }]}>
                     {route.mode === 'walk' ? '🚶' : '🚲'} {route.duration}
                   </Text>
+                  <Text style={[styles.routeStops, { color: theme.textMuted }]}>
+                    · {routeBranches.length} stops
+                  </Text>
                 </View>
                 <Text style={[styles.routeName, { color: theme.textPrimary, fontFamily: fonts.display }]}>
                   {route.name}
@@ -141,12 +156,8 @@ export default function ExploreScreen() {
                 <Text style={[styles.routeDesc, { color: theme.textMuted }]} numberOfLines={3}>
                   {route.description}
                 </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.routeStamps}
-                >
-                  {routeBranches.map((branch) => (
+                <View style={styles.routeStamps}>
+                  {routeBranches.slice(0, MAX_VISIBLE_STAMPS).map((branch) => (
                     <TouchableOpacity
                       key={branch.BranchCode}
                       onPress={() => router.push(`./branch/${branch.BranchCode}` as any)}
@@ -160,7 +171,14 @@ export default function ExploreScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                  {routeBranches.length > MAX_VISIBLE_STAMPS && (
+                    <View style={[styles.routeOverflow, { backgroundColor: theme.borderSoft }]}>
+                      <Text style={[styles.routeOverflowText, { color: theme.textMuted }]}>
+                        +{routeBranches.length - MAX_VISIBLE_STAMPS}{'\n'}More
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             )
           })}
@@ -169,15 +187,31 @@ export default function ExploreScreen() {
         {/* ── Badges ───────────────────────────────────────────────── */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary, fontFamily: fonts.display }]}>
-            Badges
+            Extra Credit
           </Text>
-          <View style={styles.badgeGrid}>
-            {BADGES.map(badge => (
-              <View key={badge.id} style={styles.badgeCell}>
-                <BadgeCard badge={badge} ctx={badgeCtx} />
+          {(() => {
+            const ordered = BADGE_DISPLAY_ORDER.map(id => BADGES.find(b => b.id === id)).filter(Boolean) as typeof BADGES
+            const rows: (typeof BADGES)[] = []
+            for (let i = 0; i < ordered.length; i += 2) rows.push(ordered.slice(i, i + 2))
+            return (
+              <View style={[styles.badgeGrid, { borderColor: theme.border }]}>
+                {/* Vertical dashed center divider */}
+                <View style={[styles.badgeDividerV, { borderColor: theme.border }]} pointerEvents="none" />
+                {rows.map((row, rowIdx) => (
+                  <View key={rowIdx}>
+                    {rowIdx > 0 && <View style={[styles.badgeDividerH, { borderColor: theme.border }]} />}
+                    <View style={styles.badgeRow}>
+                      {row.map(badge => (
+                        <View key={badge.id} style={styles.badgeCell}>
+                          <BadgeCard badge={badge} ctx={badgeCtx} />
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            )
+          })()}
         </View>
       </ScrollView>
     </View>
@@ -257,19 +291,56 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   routeDuration: { fontSize: textSize.sm },
+  routeStops: { fontSize: textSize.sm },
   routeName: { fontSize: textSize.lg, fontWeight: '700', lineHeight: 22 },
   routeDesc: { fontSize: textSize.sm, lineHeight: 18 },
-  routeStamps: { gap: 10, paddingTop: 4, paddingBottom: 2 },
-  routeStampItem: { alignItems: 'center', gap: 4, width: 60 },
+  routeStamps: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
+  routeStampItem: { alignItems: 'center', gap: 4, flex: 1 },
   routeStampArea: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   routeStampLabel: { fontSize: 10, textAlign: 'center', lineHeight: 13 },
+  routeOverflow: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    minHeight: 44,
+  },
+  routeOverflowText: {
+    fontSize: textSize.xs,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
   // Badges
   badgeGrid: {
+    position: 'relative',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  badgeDividerV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '50%',
+    width: 0,
+    borderLeftWidth: 1,
+    borderStyle: 'dashed',
+    zIndex: 1,
+  },
+  badgeDividerH: {
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+  },
+  badgeRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
   },
   badgeCell: {
-    width: '48%',
+    flex: 1,
   },
 })
