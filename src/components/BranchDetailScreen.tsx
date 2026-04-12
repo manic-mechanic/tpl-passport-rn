@@ -68,6 +68,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.92)',
   },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 18 },
+  content: { paddingHorizontal: 18, paddingTop: 20 },
   notFound: { paddingTop: 18, fontSize: textSize.md },
 })

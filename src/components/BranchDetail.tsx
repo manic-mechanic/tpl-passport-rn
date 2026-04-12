@@ -1,27 +1,76 @@
-import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import {
+  ActivityIndicator, Image, Linking, Modal, StyleSheet, Text,
+  TextInput, TouchableOpacity, View,
+} from 'react-native'
+import { formatDist, haversineKm, physicalBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
+import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { usePassportStore } from '../stores/passport'
-import { physicalBranches, haversineKm, formatDist } from '../composables/useRegion'
-import { StampShape } from './StampShape'
 import { fonts, radius, textSize } from '../theme'
-import type { Branch } from '../types'
+import type { Branch, CheckIn } from '../types'
+import { StampShape } from './StampShape'
+import branchHoursData from '../data/branch-hours.json'
+
+const branchHours = branchHoursData as Record<string, Record<string, string>>
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+// ─── Event helpers ────────────────────────────────────────────────────────────
 
 const EVENTS_RESOURCE = 'c73bbe54-3a48-4ada-8eef-a1a2864021e4'
 const CKAN = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action'
-
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
+const AUDIENCE_MAP: Record<string, string> = {
+  'Adults (18+)': 'Adults',
+  'Older Adults': 'Seniors',
+  'Younger Adults (18-24)': 'Ages 18–24',
+  'Teens (13-17)': 'Teens',
+  'School Age Children (6-12)': 'Kids 6–12',
+  'Preschool Children (0-5)': 'Ages 0–5',
+}
+const ADULT_GROUPS = new Set(['Adults (18+)', 'Older Adults', 'Younger Adults (18-24)'])
+const KID_GROUPS = new Set(['Teens (13-17)', 'School Age Children (6-12)', 'Preschool Children (0-5)'])
+
+function formatAudiences(raw: string): string {
+  if (!raw) return ''
+  const groups = raw.split(',').map(g => g.trim())
+  const adults = groups.filter(g => ADULT_GROUPS.has(g))
+  const kids = groups.filter(g => KID_GROUPS.has(g))
+  if (adults.length >= 1 && kids.length >= 1) return 'All ages'
+  if (adults.length >= 2) return 'Adults'
+  if (kids.length >= 2) return 'Kids'
+  return groups.map(g => AUDIENCE_MAP[g] ?? g).join(', ')
+}
+
+function formatEventTime(s: string): string {
+  if (!s) return ''
+  const tIdx = s.indexOf('T')
+  const timePart = tIdx !== -1 ? s.slice(tIdx + 1) : s
+  const [h, m] = timePart.split(':').map(Number)
+  if (isNaN(h) || isNaN(m)) return ''
+  const suffix = h >= 12 ? 'pm' : 'am'
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return `${h12}:${String(m).padStart(2, '0')}${suffix}`
+}
+
+function formatEventMonth(date: string): string {
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short' }).toUpperCase()
+}
+
 function filterToWindow(records: any[]) {
-  const today    = new Date().toISOString().slice(0, 10)
+  const today = new Date().toISOString().slice(0, 10)
   const tomorrow = new Date(Date.now() + MS_PER_DAY).toISOString().slice(0, 10)
   return records
     .filter(e => e.StartDateLocal >= today && e.StartDateLocal <= tomorrow)
     .sort((a, b) => (a.StartDateLocal < b.StartDateLocal ? -1 : 1))
 }
 
-function EventsSection({ branchName }: { branchName: string }) {
+// ─── EventsSection ────────────────────────────────────────────────────────────
+
+function EventsSection({ branchName, branchWebsite }: { branchName: string; branchWebsite: string }) {
   const theme = useTheme()
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,32 +82,49 @@ function EventsSection({ branchName }: { branchName: string }) {
     fetch(url)
       .then(r => r.json())
       .then(data => setEvents(filterToWindow(data.result?.records ?? [])))
-      .catch((err) => {
-        console.warn('[BranchDetail] Failed to load events:', err)
-        setEvents([])
-      })
+      .catch(() => setEvents([]))
       .finally(() => setLoading(false))
   }, [branchName])
 
-  if (loading) return <ActivityIndicator color={theme.tplBlue} style={{ marginVertical: 8 }} />
-  if (events.length === 0) return null
-
   return (
     <View style={evtStyles.section}>
-      <Text style={[evtStyles.heading, { color: theme.textPrimary }]}>Events Today & Tomorrow</Text>
-      {events.map((e: any) => {
-        const name = e.EventName ?? e['Event Name'] ?? e.Title ?? 'Event'
-        const time = e.StartTime ? ` · ${e.StartTime}` : ''
-        const age  = e.AgeGroup ?? e['Age Group'] ?? ''
-        return (
-          <View key={e._id} style={[evtStyles.row, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
-            <Text style={[evtStyles.eventName, { color: theme.textPrimary }]} numberOfLines={2}>{name}</Text>
-            <Text style={[evtStyles.eventMeta, { color: theme.textMuted }]}>
-              {e.StartDateLocal === new Date().toISOString().slice(0, 10) ? 'Today' : 'Tomorrow'}{time}{age ? ` · ${age}` : ''}
-            </Text>
-          </View>
-        )
-      })}
+      <Text style={[evtStyles.heading, { color: theme.textPrimary }]}>Upcoming Events</Text>
+
+      {loading ? (
+        <ActivityIndicator color={theme.tplBlue} style={{ marginVertical: 8 }} />
+      ) : events.length === 0 ? (
+        <Text style={[evtStyles.empty, { color: theme.textMuted }]}>No events today or tomorrow.</Text>
+      ) : (
+        events.map((e: any) => {
+          const title = e.EventName ?? e['Event Name'] ?? e.Title ?? 'Event'
+          const time = formatEventTime(e.StartTime ?? '')
+          const age = formatAudiences(e.Audiences ?? e.AgeGroup ?? e['Age Group'] ?? '')
+          const date = e.StartDateLocal ?? ''
+          const day = date ? new Date(date + 'T00:00:00').getDate() : ''
+          const month = date ? formatEventMonth(date) : ''
+          return (
+            <View key={e._id} style={evtStyles.row}>
+              {/* Date badge — mirrors web .event-date-badge */}
+              <View style={[evtStyles.dateBadge, { backgroundColor: `${theme.tplBlue}14`, borderColor: `${theme.tplBlue}33` }]}>
+                <Text style={[evtStyles.month, { color: theme.tplBlue }]}>{month}</Text>
+                <Text style={[evtStyles.day, { color: theme.tplNavy, fontFamily: fonts.display }]}>{day}</Text>
+              </View>
+              <View style={evtStyles.info}>
+                <Text style={[evtStyles.title, { color: theme.textPrimary }]} numberOfLines={2}>{title}</Text>
+                <Text style={[evtStyles.meta, { color: theme.textMuted }]}>
+                  {[time, age].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
+            </View>
+          )
+        })
+      )}
+
+      {branchWebsite ? (
+        <TouchableOpacity onPress={() => Linking.openURL(branchWebsite)}>
+          <Text style={[evtStyles.allEvents, { color: theme.tplBlue }]}>All events at this branch ↗</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   )
 }
@@ -66,12 +132,149 @@ function EventsSection({ branchName }: { branchName: string }) {
 const evtStyles = StyleSheet.create({
   section: { marginBottom: 24 },
   heading: { fontSize: textSize.base, fontWeight: '600', marginBottom: 12 },
+  empty: { fontSize: textSize.sm, marginBottom: 8 },
   row: {
-    padding: 10, borderRadius: radius.sm, borderWidth: 1, marginBottom: 6, gap: 3,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
   },
-  eventName: { fontSize: textSize.md, fontWeight: '600', lineHeight: 18 },
-  eventMeta: { fontSize: textSize.sm },
+  dateBadge: {
+    flexShrink: 0,
+    width: 44,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    gap: 1,
+  },
+  month: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+  day: {
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  info: {
+    flex: 1,
+    gap: 3,
+    paddingTop: 2,
+  },
+  title: {
+    fontSize: textSize.sm,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  meta: {
+    fontSize: textSize.sm,
+  },
+  allEvents: {
+    marginTop: 10,
+    fontSize: textSize.sm,
+    fontWeight: '600',
+  },
 })
+
+// ─── VisitRow ─────────────────────────────────────────────────────────────────
+// Extracted as a component so hooks (usePhotoPicker, useState) work per-row.
+
+function VisitRow({ visit, onPhotoTap }: { visit: CheckIn; onPhotoTap: (uri: string) => void }) {
+  const theme = useTheme()
+  const updateCheckIn = usePassportStore(s => s.updateCheckIn)
+  const { pickPhoto, takePhoto, uploading } = usePhotoPicker(visit.timestamp)
+  const [noteText, setNoteText] = useState(visit.note)
+
+  // Sync if store is updated externally (e.g. sync)
+  useEffect(() => { setNoteText(visit.note) }, [visit.note])
+
+  function saveNote() {
+    if (noteText !== visit.note) updateCheckIn(visit.timestamp, { note: noteText })
+  }
+
+  function formatVisitDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-CA', {
+      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+    })
+  }
+
+  return (
+    <View style={[vstyles.row, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}>
+      <Text style={[vstyles.date, { color: theme.textPrimary }]}>
+        {formatVisitDate(visit.timestamp)}
+      </Text>
+
+      {/* Photo area */}
+      {visit.photoUri ? (
+        <TouchableOpacity onPress={() => onPhotoTap(visit.photoUri!)} activeOpacity={0.85}>
+          <Image source={{ uri: visit.photoUri }} style={vstyles.photoThumb} resizeMode="cover" />
+        </TouchableOpacity>
+      ) : uploading ? (
+        <ActivityIndicator size="small" color={theme.textMuted} style={{ marginTop: 6 }} />
+      ) : (
+        <View style={vstyles.addPhotoBtns}>
+          <TouchableOpacity onPress={takePhoto} hitSlop={6}>
+            <Ionicons name="camera-outline" size={16} color={theme.textMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={pickPhoto} hitSlop={6}>
+            <Ionicons name="image-outline" size={16} color={theme.textMuted} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Note */}
+      <TextInput
+        style={[vstyles.noteInput, { color: theme.textPrimary, borderColor: theme.borderSoft }]}
+        value={noteText}
+        onChangeText={setNoteText}
+        onBlur={saveNote}
+        placeholder="Add a note…"
+        placeholderTextColor={theme.textMuted}
+        multiline
+        returnKeyType="done"
+        blurOnSubmit
+      />
+    </View>
+  )
+}
+
+const vstyles = StyleSheet.create({
+  row: {
+    padding: 12,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    marginBottom: 6,
+    gap: 6,
+  },
+  date: {
+    fontSize: textSize.sm,
+    fontWeight: '600',
+  },
+  photoThumb: {
+    width: '100%',
+    height: 140,
+    borderRadius: radius.sm - 2,
+    marginTop: 2,
+  },
+  addPhotoBtns: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+  },
+  noteInput: {
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 6,
+    marginTop: 2,
+    minHeight: 28,
+  },
+})
+
+// ─── BranchDetail ─────────────────────────────────────────────────────────────
 
 interface Props {
   branch: Branch
@@ -84,11 +287,15 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null)
 
   const visited = hasVisited(branch.BranchCode)
   const visitedToday = hasVisitedToday(branch.BranchCode)
   const pastVisits = checkIns.filter(c => c.branchCode === branch.BranchCode)
   const streetAddress = branch.Address?.split(',')[0] ?? ''
+
+  const todayHours = branchHours[branch.BranchCode]?.[DAYS[new Date().getDay()]] ?? null
+  const hasParking = branch.PublicParking && branch.PublicParking !== '0' && branch.PublicParking !== 0
 
   const nearbyBranches = (() => {
     if (!branch.Lat || !branch.Long) return []
@@ -99,29 +306,43 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
       .slice(0, 2)
   })()
 
-  function formatVisitDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-CA', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-    })
-  }
-
   return (
     <View style={styles.container}>
+
+      {/* Hero */}
       <View style={styles.hero}>
         <StampShape branchCode={branch.BranchCode} wardNo={branch.WardNo} size={72} ghost={!visited} />
         <View style={styles.titleArea}>
           <Text style={[styles.branchName, { color: theme.textPrimary, fontFamily: fonts.display }]}>
             {branch.BranchName}
           </Text>
-          {streetAddress ? (
-            <Text style={[styles.metaText, { color: theme.textMuted }]}>{streetAddress}</Text>
+          {todayHours ? (
+            <Text style={[styles.hours, { color: theme.textMuted }]}>Today {todayHours}</Text>
           ) : null}
-          {branch.District ? (
-            <Text style={[styles.metaText, { color: theme.textMuted }]}>{branch.District}</Text>
-          ) : null}
+          <View style={styles.metaList}>
+            {streetAddress ? (
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={12} color={theme.textMuted} />
+                <Text style={[styles.metaText, { color: theme.textMuted }]}>{streetAddress}</Text>
+              </View>
+            ) : null}
+            {branch.Telephone ? (
+              <TouchableOpacity style={styles.metaRow} onPress={() => Linking.openURL(`tel:${branch.Telephone}`)}>
+                <Ionicons name="call-outline" size={12} color={theme.textMuted} />
+                <Text style={[styles.metaText, { color: theme.textMuted }]}>{branch.Telephone}</Text>
+              </TouchableOpacity>
+            ) : null}
+            {hasParking ? (
+              <View style={styles.metaRow}>
+                <Ionicons name="car-outline" size={12} color={theme.textMuted} />
+                <Text style={[styles.metaText, { color: theme.textMuted }]}>Parking</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
       </View>
 
+      {/* Check-in button */}
       <View style={styles.checkInArea}>
         {visitedToday ? (
           <View style={[styles.checkInBtn, { backgroundColor: theme.textMuted, opacity: 0.7 }]}>
@@ -139,27 +360,20 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
         )}
       </View>
 
+      {/* Past visits */}
       {pastVisits.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Your visits here</Text>
-          {pastVisits.map((visit) => (
-            <View
-              key={visit.timestamp}
-              style={[styles.visitRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
-            >
-              <Text style={[styles.visitDate, { color: theme.textPrimary }]}>
-                {formatVisitDate(visit.timestamp)}
-              </Text>
-              {visit.note ? (
-                <Text style={[styles.visitNote, { color: theme.textMuted }]}>{visit.note}</Text>
-              ) : null}
-            </View>
+          {pastVisits.map(visit => (
+            <VisitRow key={visit.timestamp} visit={visit} onPhotoTap={setLightboxUri} />
           ))}
         </View>
       )}
 
-      <EventsSection branchName={branch.BranchName} />
+      {/* Events */}
+      <EventsSection branchName={branch.BranchName} branchWebsite={branch.Website} />
 
+      {/* Nearby branches */}
       {nearbyBranches.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Nearby branches</Text>
@@ -174,19 +388,33 @@ export function BranchDetail({ branch, onNearbyPress }: Props) {
                 <Text style={[styles.nearbyName, { color: theme.textPrimary }]}>{nb.BranchName}</Text>
                 <Text style={[styles.nearbyDist, { color: theme.textMuted }]}>{formatDist(nb.distKm)} away</Text>
               </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
             </TouchableOpacity>
           ))}
         </View>
       )}
+
+      {/* Photo lightbox */}
+      <Modal visible={!!lightboxUri} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+        <TouchableOpacity
+          style={styles.lightbox}
+          onPress={() => setLightboxUri(null)}
+          activeOpacity={1}
+        >
+          {lightboxUri && (
+            <Image source={{ uri: lightboxUri }} style={styles.lightboxImg} resizeMode="contain" />
+          )}
+        </TouchableOpacity>
+      </Modal>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { paddingTop: 8 },
+  container: { paddingTop: 0 },
   hero: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 16,
     paddingBottom: 14,
   },
@@ -198,6 +426,19 @@ const styles = StyleSheet.create({
     fontSize: textSize.lg,
     fontWeight: '700',
     lineHeight: 22,
+  },
+  hours: {
+    fontSize: textSize.sm,
+    marginTop: 1,
+  },
+  metaList: {
+    marginTop: 4,
+    gap: 3,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   metaText: {
     fontSize: textSize.sm,
@@ -225,26 +466,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
-  visitRow: {
-    padding: 10,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    marginBottom: 6,
-    gap: 4,
-  },
-  visitDate: {
-    fontSize: textSize.md,
-    fontWeight: '600',
-  },
-  visitNote: {
-    fontSize: textSize.sm,
-    lineHeight: 18,
-  },
   nearbyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 10,
+    paddingHorizontal: 14,
     borderRadius: radius.sm,
     borderWidth: 1,
     marginBottom: 8,
@@ -254,10 +481,21 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   nearbyName: {
-    fontSize: textSize.md,
+    fontSize: textSize.sm,
     fontWeight: '600',
+    lineHeight: 17,
   },
   nearbyDist: {
     fontSize: textSize.sm,
+  },
+  lightbox: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxImg: {
+    width: '100%',
+    height: '100%',
   },
 })
