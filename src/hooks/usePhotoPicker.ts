@@ -1,7 +1,17 @@
 import { useState } from 'react'
+import * as ImageManipulator from 'expo-image-manipulator'
 import { authClient } from '../lib/auth-client'
 import { uploadPhotoToR2, saveLocalPhoto } from '../lib/upload'
 import { usePassportStore } from '../stores/passport'
+
+async function resizePhoto(uri: string): Promise<string> {
+  const result = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: 1280 } }],
+    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+  )
+  return result.uri
+}
 
 export function usePhotoPicker(timestamp: string) {
   const [uploading, setUploading] = useState(false)
@@ -14,9 +24,10 @@ export function usePhotoPicker(timestamp: string) {
     setUploading(true)
     setError(null)
     try {
+      const resized = await resizePhoto(sourceUri)
       const photoUri = session?.user
-        ? await uploadPhotoToR2(sourceUri)
-        : await saveLocalPhoto(sourceUri, timestamp)
+        ? await uploadPhotoToR2(resized)
+        : await saveLocalPhoto(resized, timestamp)
       setCheckInPhoto(timestamp, photoUri)
       if (session?.user) {
         const updated = usePassportStore.getState().checkIns.find(c => c.timestamp === timestamp)

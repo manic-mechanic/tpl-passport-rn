@@ -51,9 +51,7 @@ export function CameraSheet({ visible, onCapture, onClose }: Props) {
     if (status !== 'granted') return
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      quality: 1,
     })
     if (!result.canceled) {
       onCapture(result.assets[0].uri)
@@ -65,7 +63,7 @@ export function CameraSheet({ visible, onCapture, onClose }: Props) {
     if (!cameraRef.current || taking) return
     setTaking(true)
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 })
+      const photo = await cameraRef.current.takePictureAsync({ quality: 1 })
       if (photo) {
         onCapture(photo.uri)
         onClose()
