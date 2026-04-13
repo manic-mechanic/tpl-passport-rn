@@ -1,6 +1,7 @@
-import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { forwardRef } from 'react'
+import { forwardRef, useCallback } from 'react'
 import { StyleSheet, useWindowDimensions, View, Text } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '../hooks/useTheme'
@@ -146,6 +147,13 @@ export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
     const tabBarHeight = useBottomTabBarHeight()
     const { height: screenHeight } = useWindowDimensions()
 
+    const renderBackdrop = useCallback(
+      (props: BottomSheetBackdropProps) => (
+        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" />
+      ),
+      []
+    )
+
     return (
       <BottomSheetModal
         ref={ref}
@@ -157,6 +165,7 @@ export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
         style={[styles.sheetShadow, { shadowColor: theme.shadowColor }]}
         onDismiss={onDismiss}
         animationConfigs={ANIMATION_CONFIGS}
+        backdropComponent={renderBackdrop}
       >
         {badge && <BadgeContent badge={badge} ctx={ctx} />}
       </BottomSheetModal>
