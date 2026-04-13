@@ -127,4 +127,29 @@ describe('mergeCheckIns', () => {
       expect(toPush).toEqual([])
     })
   })
+
+  describe('timezone edge case', () => {
+    // mergeCheckIns dedup uses UTC date (timestamp.slice(0,10)).
+    // hasVisitedToday uses local time (toLocaleDateString).
+    // For users in UTC- timezones, a check-in late at night local time
+    // falls on the *next* UTC day, creating a mismatch.
+    //
+    // Example: Toronto (UTC-4), check-in at 10pm local = 2am UTC next day.
+    //   Device A: 2pm local Apr 10 → UTC 2024-04-10T18:00Z  (slice: 2024-04-10)
+    //   Device B: 10pm local Apr 10 → UTC 2024-04-11T02:00Z (slice: 2024-04-11)
+    //
+    // These are the SAME local day but DIFFERENT UTC dates, so the dedup
+    // does NOT catch this case. Documenting as a known limitation.
+
+    it('does NOT dedup a same-local-day check-in that crosses the UTC midnight boundary', () => {
+      const deviceA = ci('AGO', '2024-04-10T18:00:00.000Z') // 2pm Toronto = Apr 10 UTC
+      const deviceB = ci('AGO', '2024-04-11T02:00:00.000Z') // 10pm Toronto = Apr 11 UTC
+
+      const { merged } = mergeCheckIns([deviceB], [deviceA])
+
+      // Both records survive because their UTC date prefixes differ (Apr 10 vs Apr 11).
+      // In a UTC-4 timezone, a user would see two check-ins for the same local day.
+      expect(merged).toHaveLength(2)
+    })
+  })
 })
