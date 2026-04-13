@@ -2,6 +2,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useRef, useState, useCallback } from 'react'
 import { useFocusEffect, useRouter } from 'expo-router'
+import { useLastNonNull } from '../hooks/useLastNonNull'
 import { useTheme } from '../hooks/useTheme'
 import { BADGES, useBadgeCtx, type Badge, type BadgeCtx } from '../composables/useBadges'
 import { fonts, textSize } from '../theme'
@@ -89,8 +90,7 @@ export function HomeBadgesStrip() {
   const highlights = getHighlightBadges(ctx)
   const badgeSheetRef = useRef<BottomSheetModal>(null)
   const [activeBadge, setActiveBadge] = useState<Badge | null>(null)
-  const lastBadgeRef = useRef<Badge | null>(null)
-  if (activeBadge) lastBadgeRef.current = activeBadge
+  const lastBadge = useLastNonNull(activeBadge)
 
   useFocusEffect(useCallback(() => {
     return () => { badgeSheetRef.current?.dismiss() }
@@ -117,7 +117,7 @@ export function HomeBadgesStrip() {
       </View>
       <BadgeDetailSheet
         ref={badgeSheetRef}
-        badge={lastBadgeRef.current}
+        badge={lastBadge}
         ctx={ctx}
         onDismiss={() => setActiveBadge(null)}
       />

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useLastNonNull } from '@/src/hooks/useLastNonNull'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
@@ -23,8 +24,7 @@ export default function PassportScreen() {
   const [activePage, setActivePage] = useState(0)
   const badgeSheetRef = useRef<BottomSheetModal>(null)
   const [activeBadge, setActiveBadge] = useState<Badge | null>(null)
-  const lastBadgeRef = useRef<Badge | null>(null)
-  if (activeBadge) lastBadgeRef.current = activeBadge
+  const lastBadge = useLastNonNull(activeBadge)
 
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
@@ -333,7 +333,7 @@ export default function PassportScreen() {
 
       <BadgeDetailSheet
         ref={badgeSheetRef}
-        badge={lastBadgeRef.current}
+        badge={lastBadge}
         ctx={badgeCtx}
         onDismiss={() => setActiveBadge(null)}
       />

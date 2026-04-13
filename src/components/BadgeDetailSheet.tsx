@@ -16,8 +16,128 @@ interface Props {
   onDismiss?: () => void
 }
 
+const ANIMATION_CONFIGS = { damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }
+
 function branchName(code: string): string {
   return physicalBranches.find(b => b.BranchCode === code)?.BranchName ?? code
+}
+
+function BadgeContent({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
+  const theme = useTheme()
+  const earned = badge.earned(ctx)
+  const earnedDate = earned && badge.earnedAt ? badge.earnedAt(ctx) : null
+  const progress = !earned && badge.progress ? badge.progress(ctx) : null
+  const progressPct = progress ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0
+
+  return (
+    <BottomSheetScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.badgeArea}>
+        <BadgeShape badge={badge} ctx={ctx} size={88} />
+      </View>
+
+      <Text style={[styles.title, { color: theme.tplNavy, fontFamily: fonts.display }]}>
+        {badge.title}
+      </Text>
+      <Text style={[styles.desc, { color: theme.textMuted }]}>
+        {badge.desc}
+      </Text>
+
+      {earned ? (
+        <View style={styles.earnedRow}>
+          <Ionicons name="checkmark-circle" size={16} color="#2a8a4a" />
+          <Text style={[styles.earnedText, { color: '#2a8a4a' }]}>
+            Earned{earnedDate ? ` · ${earnedDate}` : ''}
+          </Text>
+        </View>
+      ) : progress ? (
+        <View style={styles.progressRow}>
+          <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
+            <View style={[styles.progressFill, { backgroundColor: theme.tplBlue, width: `${progressPct}%` }]} />
+          </View>
+          <Text style={[styles.progressLabel, { color: theme.textMuted }]}>
+            {progress.current}/{progress.total}
+          </Text>
+        </View>
+      ) : null}
+
+      {badge.id === 'navigator' && (
+        <View style={styles.detailList}>
+          {(['n', 'e', 's', 'w'] as const).map((dir, idx) => {
+            const label = ['North', 'East', 'South', 'West'][idx]
+            const code = compassPoints[dir]
+            const done = ctx.visitedBranchCodes.has(code)
+            return (
+              <View key={dir} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
+                <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
+                  {done ? '✓' : '·'}
+                </Text>
+                <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
+                  <Text style={styles.detailDir}>{label}</Text>
+                  {` — ${branchName(code)}`}
+                </Text>
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {badge.id === 'page_turner' && (
+        <View style={styles.detailList}>
+          {branchesByAlphaPage.map(page => {
+            const done = page.branches.some(b => ctx.visitedBranchCodes.has(b.BranchCode))
+            return (
+              <View key={page.label} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
+                <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
+                  {done ? '✓' : '·'}
+                </Text>
+                <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
+                  {page.label}
+                </Text>
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {badge.id === 'page_filler' && (
+        <View style={styles.detailList}>
+          {branchesByAlphaPage.map(page => {
+            const visitedCount = page.branches.filter(b => ctx.visitedBranchCodes.has(b.BranchCode)).length
+            const done = visitedCount === page.branches.length
+            return (
+              <View key={page.label} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
+                <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
+                  {done ? '✓' : '·'}
+                </Text>
+                <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
+                  {page.label}
+                </Text>
+                <Text style={[styles.detailCount, { color: theme.textMuted }]}>
+                  {visitedCount}/{page.branches.length}
+                </Text>
+              </View>
+            )
+          })}
+        </View>
+      )}
+
+      {badge.id === 'familiar_face' && ctx.homeBranch && (
+        <View style={styles.detailList}>
+          <View style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
+            <Text style={[styles.detailCheck, { color: earned ? theme.tplBlue : theme.border }]}>
+              {earned ? '✓' : '·'}
+            </Text>
+            <Text style={[styles.detailText, { color: earned ? theme.textPrimary : theme.textMuted }]}>
+              {branchName(ctx.homeBranch)}
+            </Text>
+            <Text style={[styles.detailCount, { color: theme.textMuted }]}>
+              {ctx.homeVisitCount}/5 visits
+            </Text>
+          </View>
+        </View>
+      )}
+    </BottomSheetScrollView>
+  )
 }
 
 export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
@@ -36,128 +156,9 @@ export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
         handleIndicatorStyle={{ backgroundColor: theme.border }}
         style={styles.sheetShadow}
         onDismiss={onDismiss}
-        animationConfigs={{ damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }}
+        animationConfigs={ANIMATION_CONFIGS}
       >
-        {badge && (() => {
-          const earned = badge.earned(ctx)
-          const earnedDate = earned && badge.earnedAt ? badge.earnedAt(ctx) : null
-          const progress = !earned && badge.progress ? badge.progress(ctx) : null
-          const progressPct = progress ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0
-          return (
-            <BottomSheetScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-              <View style={styles.badgeArea}>
-                <BadgeShape badge={badge} ctx={ctx} size={88} />
-              </View>
-
-              <Text style={[styles.title, { color: theme.tplNavy, fontFamily: fonts.display }]}>
-                {badge.title}
-              </Text>
-              <Text style={[styles.desc, { color: theme.textMuted }]}>
-                {badge.desc}
-              </Text>
-
-              {earned ? (
-                <View style={styles.earnedRow}>
-                  <Ionicons name="checkmark-circle" size={16} color="#2a8a4a" />
-                  <Text style={[styles.earnedText, { color: '#2a8a4a' }]}>
-                    Earned{earnedDate ? ` · ${earnedDate}` : ''}
-                  </Text>
-                </View>
-              ) : progress ? (
-                <View style={styles.progressRow}>
-                  <View style={[styles.progressTrack, { backgroundColor: theme.borderSoft }]}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        { backgroundColor: theme.tplBlue, width: `${progressPct}%` },
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.progressLabel, { color: theme.textMuted }]}>
-                    {progress.current}/{progress.total}
-                  </Text>
-                </View>
-              ) : null}
-
-              {badge.id === 'navigator' && (
-                <View style={styles.detailList}>
-                  {(['n', 'e', 's', 'w'] as const).map((dir, idx) => {
-                    const label = ['North', 'East', 'South', 'West'][idx]
-                    const code = compassPoints[dir]
-                    const done = ctx.visitedBranchCodes.has(code)
-                    return (
-                      <View key={dir} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
-                        <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
-                          {done ? '✓' : '·'}
-                        </Text>
-                        <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
-                          <Text style={styles.detailDir}>{label}</Text>
-                          {` — ${branchName(code)}`}
-                        </Text>
-                      </View>
-                    )
-                  })}
-                </View>
-              )}
-
-              {badge.id === 'page_turner' && (
-                <View style={styles.detailList}>
-                  {branchesByAlphaPage.map(page => {
-                    const done = page.branches.some(b => ctx.visitedBranchCodes.has(b.BranchCode))
-                    return (
-                      <View key={page.label} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
-                        <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
-                          {done ? '✓' : '·'}
-                        </Text>
-                        <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
-                          {page.label}
-                        </Text>
-                      </View>
-                    )
-                  })}
-                </View>
-              )}
-
-              {badge.id === 'page_filler' && (
-                <View style={styles.detailList}>
-                  {branchesByAlphaPage.map(page => {
-                    const visitedCount = page.branches.filter(b => ctx.visitedBranchCodes.has(b.BranchCode)).length
-                    const done = visitedCount === page.branches.length
-                    return (
-                      <View key={page.label} style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
-                        <Text style={[styles.detailCheck, { color: done ? theme.tplBlue : theme.border }]}>
-                          {done ? '✓' : '·'}
-                        </Text>
-                        <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
-                          {page.label}
-                        </Text>
-                        <Text style={[styles.detailCount, { color: theme.textMuted }]}>
-                          {visitedCount}/{page.branches.length}
-                        </Text>
-                      </View>
-                    )
-                  })}
-                </View>
-              )}
-
-              {badge.id === 'familiar_face' && ctx.homeBranch && (
-                <View style={styles.detailList}>
-                  <View style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
-                    <Text style={[styles.detailCheck, { color: earned ? theme.tplBlue : theme.border }]}>
-                      {earned ? '✓' : '·'}
-                    </Text>
-                    <Text style={[styles.detailText, { color: earned ? theme.textPrimary : theme.textMuted }]}>
-                      {branchName(ctx.homeBranch)}
-                    </Text>
-                    <Text style={[styles.detailCount, { color: theme.textMuted }]}>
-                      {ctx.homeVisitCount}/5 visits
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </BottomSheetScrollView>
-          )
-        })()}
+        {badge && <BadgeContent badge={badge} ctx={ctx} />}
       </BottomSheetModal>
     )
   }
