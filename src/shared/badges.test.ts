@@ -1,3 +1,7 @@
+// These tests run against the real branch-info.json data — no mocks.
+// navigator uses compassPoints computed from actual geo coordinates at module load time.
+// page_turner and page_filler derive branch codes dynamically from branchesByAlphaPage,
+// so they remain correct if the branch list changes.
 import { describe, it, expect } from 'vitest'
 import {
   maxBranchesInOneDay,
