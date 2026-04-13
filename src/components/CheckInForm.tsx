@@ -15,14 +15,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getErrorCode } from '../lib/errors'
 import { filterBranches, formatDist, haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
+import { useLocationDetector } from '../hooks/useLocationDetector'
+import { MAX_CHECKIN_DISTANCE_KM } from '../constants'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch } from '../types'
 import { ScreenHeader } from './ScreenHeader'
 import { StampShape } from './StampShape'
+import { CheckInBranchPicker } from './CheckInBranchPicker'
 
-const FALLBACK_CODE = 'TRL' // shown when GPS is unavailable
-const MAX_CHECKIN_DISTANCE_KM = 0.1 // must be within 100 m to check in
 const LOCATION_TIMEOUT_CODE = 3 // GeolocationPositionError.TIMEOUT
 
 interface Props {
@@ -36,8 +37,6 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
 
   const [selectedCode, setSelectedCode] = useState('')
   const [noteText, setNoteText] = useState('')
-  const [detecting, setDetecting] = useState(false)
-  const [locationError, setLocationError] = useState<string | null>(null)
   const [checkInError, setCheckInError] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [pickerSearch, setPickerSearch] = useState('')
@@ -46,15 +45,15 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   const hasVisitedToday = usePassportStore(s => s.hasVisitedToday)
   const bypassLocationFence = usePassportStore(s => s.profile.bypassLocationFence)
 
-  // Refs so useFocusEffect always calls the latest version of these without
-  // re-registering the effect on every render (detectNearest is a hoisted fn).
+  const { detecting, locationError, setLocationError, detect } = useLocationDetector(hasVisitedToday)
+
+  // Refs so useFocusEffect always calls the latest version without re-registering on every render.
   const hasVisitedTodayRef = useRef(hasVisitedToday)
   hasVisitedTodayRef.current = hasVisitedToday
   const detectNearestRef = useRef(detectNearest)
   detectNearestRef.current = detectNearest
 
   const selectedBranch: Branch | null = sortedBranches.find(b => b.BranchCode === selectedCode) ?? null
-
   const pickerResults: Branch[] = filterBranches(pickerSearch)
 
   useFocusEffect(
@@ -69,7 +68,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
           showAlreadyVisitedAlert(prefillCode, () => detectNearestRef.current())
         } else {
           setSelectedCode(prefillCode)
-          setDetecting(false)
+          // detecting stays false — skip location check when prefilled
         }
       } else {
         setSelectedCode('')
@@ -88,37 +87,13 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
   }
 
   async function detectNearest() {
-    setDetecting(true)
-    setLocationError(null)
     setCheckInError(null)
     setShowPicker(false)
     setSelectedCode('')
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
-        setSelectedCode(FALLBACK_CODE)
-        setLocationError('Location access denied — showing default branch.')
-        return
-      }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const nearest = sortedBranches
-        .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
-        .sort((a, b) => a.distKm - b.distKm)[0]
-      if (hasVisitedToday(nearest.BranchCode)) {
-        setShowPicker(true)
-      } else {
-        setSelectedCode(nearest.BranchCode)
-      }
-    } catch (err) {
-      if (getErrorCode(err) === LOCATION_TIMEOUT_CODE) {
-        setLocationError('Location check timed out — try again.')
-      } else {
-        setSelectedCode(FALLBACK_CODE)
-        setLocationError('Could not determine location — showing default branch.')
-      }
-    } finally {
-      setDetecting(false)
-    }
+    const result = await detect()
+    if (result.type === 'code') setSelectedCode(result.code)
+    else if (result.type === 'picker') setShowPicker(true)
+    // 'error' case: locationError already set by hook
   }
 
   function pickBranch(code: string) {
@@ -238,51 +213,14 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
             </TouchableOpacity>
           </>
         ) : (
-          // Branch picker — shown when no branch detected or user tapped "Change branch"
-          <View style={styles.pickerWrap}>
-            <View style={[styles.pickerSearchRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Ionicons name="search-outline" size={18} color={theme.textMuted} />
-              <TextInput
-                style={[styles.pickerSearchInput, { color: theme.textPrimary }]}
-                value={pickerSearch}
-                onChangeText={setPickerSearch}
-                placeholder="Search branches…"
-                placeholderTextColor={theme.textMuted}
-                clearButtonMode="while-editing"
-                autoCapitalize="none"
-              />
-            </View>
-
-            {showPicker && (
-              <TouchableOpacity onPress={detectNearest} style={styles.detectRow} hitSlop={4}>
-                <Ionicons name="locate-outline" size={16} color={theme.tplBlue} />
-                <Text style={[styles.detectRowText, { color: theme.tplBlue }]}>Use my location</Text>
-              </TouchableOpacity>
-            )}
-
-            <ScrollView
-              style={[styles.pickerList, { borderColor: theme.border }]}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              nestedScrollEnabled
-            >
-              {pickerResults.map((b, i) => (
-                <TouchableOpacity
-                  key={b.BranchCode}
-                  style={[
-                    styles.pickerRow,
-                    { borderBottomColor: theme.borderSoft },
-                    i === pickerResults.length - 1 && { borderBottomWidth: 0 },
-                  ]}
-                  onPress={() => pickBranch(b.BranchCode)}
-                >
-                  <Text style={[styles.pickerRowText, { color: theme.textPrimary }]} numberOfLines={1}>
-                    {b.BranchName}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <CheckInBranchPicker
+            search={pickerSearch}
+            onSearchChange={setPickerSearch}
+            results={pickerResults}
+            onPick={pickBranch}
+            showLocateOption={showPicker}
+            onLocate={detectNearest}
+          />
         )}
       </ScrollView>
     </View>
@@ -343,44 +281,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   checkInBtnText: { color: '#fff', fontSize: textSize.base, fontWeight: '700' },
-  // Branch picker
-  pickerWrap: { gap: 10, flex: 1 },
-  pickerSearchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  pickerSearchInput: {
-    flex: 1,
-    fontSize: textSize.base,
-    paddingVertical: 0,
-  },
-  detectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  detectRowText: {
-    fontSize: textSize.sm,
-    fontWeight: '600',
-  },
-  pickerList: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  pickerRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    gap: 2,
-  },
-  pickerRowText: {
-    fontSize: textSize.base,
-    fontWeight: '500',
-  },
 })
