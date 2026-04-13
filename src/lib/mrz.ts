@@ -11,8 +11,8 @@ export function generateMRZ(
 ): { line1: string; line2: string } {
   const raw = (name || 'TRAVELLER').toUpperCase()
   const parts = raw.replace(/[^A-Z ]/g, '').split(' ').filter(Boolean)
-  const surname = parts[0] ?? 'TRAVELLER'
-  const given = parts.slice(1).join('<') || ''
+  const surname = parts[parts.length - 1] ?? 'TRAVELLER'
+  const given = parts.slice(0, -1).join('<') || ''
   const nameField = given ? `${surname}<<${given}` : surname
   const line1 = `P<TPL${nameField}`.slice(0, 30)
 

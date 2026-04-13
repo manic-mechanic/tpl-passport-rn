@@ -3,15 +3,15 @@ import { generateMRZ } from './mrz'
 
 describe('generateMRZ', () => {
   describe('line 1 (name field)', () => {
-    // The implementation treats the first word as surname, remaining words as given.
-    it('formats first-word<<rest', () => {
+    // Last word is surname, preceding words are given name — standard Western name order.
+    it('formats given<<surname', () => {
       const { line1 } = generateMRZ('Jane Smith', 0, 0, 2024)
-      expect(line1).toBe('P<TPLJANE<<SMITH')
+      expect(line1).toBe('P<TPLSMITH<<JANE')
     })
 
     it('uppercases the name', () => {
       const { line1 } = generateMRZ('jane smith', 0, 0, 2024)
-      expect(line1).toContain('JANE<<SMITH')
+      expect(line1).toContain('SMITH<<JANE')
     })
 
     it('uses just the name when there is only one word', () => {
@@ -81,6 +81,19 @@ describe('generateMRZ', () => {
     it('full line 2 format is correct', () => {
       const { line2 } = generateMRZ('Jane Smith', 42, 18, 2024)
       expect(line2).toBe('TPL00042CAN240101M018PCT')
+    })
+  })
+
+  describe('multi-word names', () => {
+    it('treats last word as surname, rest as given', () => {
+      const { line1 } = generateMRZ('Mary Jane Watson', 0, 0, 2024)
+      expect(line1).toContain('WATSON<<MARY<JANE')
+    })
+
+    it('single name has no << separator', () => {
+      const { line1 } = generateMRZ('Cher', 0, 0, 2024)
+      expect(line1).toBe('P<TPLCHER')
+      expect(line1).not.toContain('<<')
     })
   })
 })
