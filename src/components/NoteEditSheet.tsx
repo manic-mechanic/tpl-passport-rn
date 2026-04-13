@@ -1,9 +1,7 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import {
-  Keyboard, KeyboardAvoidingView, Modal, Platform,
-  StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View,
-} from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { BottomSheetModal, BottomSheetTextInput, BottomSheetView } from '@gorhom/bottom-sheet'
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
@@ -15,18 +13,19 @@ export interface NoteEditSheetMethods {
   dismiss: () => void
 }
 
+const ANIMATION_CONFIGS = { damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 function NoteEditSheetComponent(
   _props: {},
   ref: React.ForwardedRef<NoteEditSheetMethods>,
 ) {
   const theme = useTheme()
-  const insets = useSafeAreaInsets()
+  const tabBarHeight = useBottomTabBarHeight()
   const updateCheckIn = usePassportStore(s => s.updateCheckIn)
+  const sheetRef = useRef<BottomSheetModal>(null)
   const inputRef = useRef<TextInput>(null)
 
-  const [visible, setVisible] = useState(false)
-  const [closing, setClosing] = useState(false)
   const [visit, setVisit] = useState<CheckIn | null>(null)
   const [draftNote, setDraftNote] = useState('')
 
@@ -34,105 +33,84 @@ function NoteEditSheetComponent(
     present(v: CheckIn) {
       setVisit(v)
       setDraftNote(v.note ?? '')
-      setClosing(false)
-      setVisible(true)
+      sheetRef.current?.present()
     },
-    dismiss: close,
+    dismiss() {
+      sheetRef.current?.dismiss()
+    },
   }))
-
-  function close() {
-    setClosing(true)   // disable all touches immediately
-    Keyboard.dismiss()
-    setVisible(false)
-  }
 
   function save() {
     if (visit) updateCheckIn(visit.timestamp, { note: draftNote })
-    close()
+    sheetRef.current?.dismiss()
   }
 
-  // Focus input after slide animation (~300ms on iOS).
-  useEffect(() => {
-    if (visible) {
-      const t = setTimeout(() => inputRef.current?.focus(), 320)
-      return () => clearTimeout(t)
-    }
-  }, [visible])
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={close}
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      bottomInset={tabBarHeight}
+      backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
+      handleIndicatorStyle={{ backgroundColor: theme.border }}
+      style={styles.sheetShadow}
+      animationConfigs={ANIMATION_CONFIGS}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      onChange={(index) => {
+        if (index === 0) setTimeout(() => inputRef.current?.focus(), 100)
+      }}
     >
-      <KeyboardAvoidingView
-        style={styles.kav}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        pointerEvents={closing ? 'none' : 'box-none'}
-      >
-        {/* Tappable backdrop */}
-        <TouchableWithoutFeedback onPress={close}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
+      <BottomSheetView style={styles.content}>
+        <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>
+          {visit?.note ? 'Edit note' : 'Add a note'}
+        </Text>
 
-        {/* Sheet */}
-        <View style={[styles.sheet, { backgroundColor: theme.bg, paddingBottom: insets.bottom + 16 }]}>
-          {/* Handle */}
-          <View style={[styles.handle, { backgroundColor: theme.border }]} />
+        <BottomSheetTextInput
+          ref={inputRef}
+          style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bg }]}
+          value={draftNote}
+          onChangeText={setDraftNote}
+          placeholder="What do you remember about this visit?"
+          placeholderTextColor={theme.textMuted}
+          multiline
+          textAlignVertical="top"
+        />
 
-          <Text style={[styles.title, { color: theme.textPrimary, fontFamily: fonts.display }]}>
-            {visit?.note ? 'Edit note' : 'Add a note'}
-          </Text>
-
-          <TextInput
-            ref={inputRef}
-            style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.surface }]}
-            value={draftNote}
-            onChangeText={setDraftNote}
-            placeholder="What do you remember about this visit?"
-            placeholderTextColor={theme.textMuted}
-            multiline
-            textAlignVertical="top"
-          />
-
-          <View style={styles.actions}>
-            <TouchableOpacity onPress={close} style={[styles.btn, { borderColor: theme.border }]}>
-              <Text style={[styles.btnText, { color: theme.textMuted }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={save} style={[styles.btn, styles.btnPrimary, { backgroundColor: theme.tplBlue }]}>
-              <Text style={[styles.btnText, { color: '#fff' }]}>Save</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={() => sheetRef.current?.dismiss()} style={[styles.btn, { borderColor: theme.border }]}>
+            <Text style={[styles.btnText, { color: theme.textMuted }]}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={save} style={[styles.btn, styles.btnPrimary, { backgroundColor: theme.tplBlue }]}>
+            <Text style={[styles.btnText, { color: '#fff' }]}>Save</Text>
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
 export const NoteEditSheet = forwardRef(NoteEditSheetComponent)
 
 const styles = StyleSheet.create({
-  kav: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  sheetBg: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
-  backdrop: {
-    flex: 1,
+  sheetShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  sheet: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+  content: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 4,
+    paddingBottom: 24,
     gap: 14,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    marginBottom: 4,
   },
   title: {
     fontSize: textSize.base,
