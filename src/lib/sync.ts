@@ -70,12 +70,29 @@ export async function syncCheckIns(
       })
     }
   }
-  const merged = Array.from(mergedMap.values()).sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+  // Branch+day combos that already have a canonical record on the server.
+  const serverBranchDays = new Set(
+    Array.from(serverMap.values()).map(c => `${c.branchCode}:${c.timestamp.slice(0, 10)}`)
+  )
+
+  // Drop local-only records that are same-branch+day duplicates of a server record.
+  // These were created on a device that checked in without syncing first.
+  const merged = Array.from(mergedMap.values())
+    .filter(c => {
+      if (serverMap.has(key(c.branchCode, c.timestamp))) return true
+      return !serverBranchDays.has(`${c.branchCode}:${c.timestamp.slice(0, 10)}`)
+    })
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 
   setCheckIns(merged)
 
-  // Push any local-only records to server
-  const localOnly = localCheckIns.filter(c => !serverMap.has(key(c.branchCode, c.timestamp)))
+  // Push local-only records to server, skipping same-branch+day duplicates
+  // (the server would silently ignore them anyway, but no need to send them).
+  const localOnly = localCheckIns.filter(c => {
+    if (serverMap.has(key(c.branchCode, c.timestamp))) return false
+    return !serverBranchDays.has(`${c.branchCode}:${c.timestamp.slice(0, 10)}`)
+  })
   for (const ci of localOnly) {
     pushCheckIn(ci).catch(() => {})
   }
