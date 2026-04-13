@@ -21,7 +21,11 @@
       "WebFetch(domain:ishan.page)",
       "Bash(find /Users/benny/Documents/repos/tpl-passport/app -type d -not -path */node_modules/* -not -path */.output/*)",
       "Bash(gh issue:*)",
-      "Bash(wc -l app/components/*.vue)"
+      "Bash(wc -l app/components/*.vue)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(./node_modules/.bin/vitest run:*)",
+      "WebFetch(domain:tpl.ca)"
     ]
   }
 }
