@@ -1,5 +1,7 @@
-import { Modal, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
+import { forwardRef } from 'react'
+import { StyleSheet, useWindowDimensions, View, Text } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '../hooks/useTheme'
 import { BadgeShape } from './BadgeShape'
@@ -9,44 +11,40 @@ import { fonts, textSize } from '../theme'
 import type { Badge, BadgeCtx } from '../composables/useBadges'
 
 interface Props {
-  badge: Badge | null   // keep non-null during close animation via lastBadgeRef
+  badge: Badge | null
   ctx: BadgeCtx
-  visible: boolean
-  onClose: () => void
+  onDismiss?: () => void
 }
 
 function branchName(code: string): string {
   return physicalBranches.find(b => b.BranchCode === code)?.BranchName ?? code
 }
 
-export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
-  const theme = useTheme()
-  const insets = useSafeAreaInsets()
+export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
+  ({ badge, ctx, onDismiss }, ref) => {
+    const theme = useTheme()
+    const tabBarHeight = useBottomTabBarHeight()
+    const { height: screenHeight } = useWindowDimensions()
 
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      {badge && (() => {
-        const earned = badge.earned(ctx)
-        const earnedDate = earned && badge.earnedAt ? badge.earnedAt(ctx) : null
-        const progress = !earned && badge.progress ? badge.progress(ctx) : null
-        const progressPct = progress ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0
-        return (
-          <View style={[styles.container, { backgroundColor: theme.bg, paddingBottom: insets.bottom + 16 }]}>
-            {/* Handle + close */}
-            <View style={[styles.topBar, { borderBottomColor: theme.borderSoft }]}>
-              <View style={[styles.handle, { backgroundColor: theme.border }]} />
-              <TouchableOpacity onPress={onClose} hitSlop={10} style={styles.closeBtn}>
-                <Ionicons name="close" size={22} color={theme.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-              {/* Badge shape */}
+    return (
+      <BottomSheetModal
+        ref={ref}
+        enableDynamicSizing
+        maxDynamicContentSize={screenHeight * 0.8 - tabBarHeight}
+        bottomInset={tabBarHeight}
+        backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        handleIndicatorStyle={{ backgroundColor: theme.border }}
+        style={styles.sheetShadow}
+        onDismiss={onDismiss}
+        animationConfigs={{ damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }}
+      >
+        {badge && (() => {
+          const earned = badge.earned(ctx)
+          const earnedDate = earned && badge.earnedAt ? badge.earnedAt(ctx) : null
+          const progress = !earned && badge.progress ? badge.progress(ctx) : null
+          const progressPct = progress ? Math.min(100, Math.round((progress.current / progress.total) * 100)) : 0
+          return (
+            <BottomSheetScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
               <View style={styles.badgeArea}>
                 <BadgeShape badge={badge} ctx={ctx} size={88} />
               </View>
@@ -58,7 +56,6 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                 {badge.desc}
               </Text>
 
-              {/* Earned / progress status */}
               {earned ? (
                 <View style={styles.earnedRow}>
                   <Ionicons name="checkmark-circle" size={16} color="#2a8a4a" />
@@ -82,7 +79,6 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                 </View>
               ) : null}
 
-              {/* Navigator: compass directions */}
               {badge.id === 'navigator' && (
                 <View style={styles.detailList}>
                   {(['n', 'e', 's', 'w'] as const).map((dir, idx) => {
@@ -104,7 +100,6 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                 </View>
               )}
 
-              {/* Page Turner: one branch per alpha page */}
               {badge.id === 'page_turner' && (
                 <View style={styles.detailList}>
                   {branchesByAlphaPage.map(page => {
@@ -123,7 +118,6 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                 </View>
               )}
 
-              {/* Page Filler: fill one complete page */}
               {badge.id === 'page_filler' && (
                 <View style={styles.detailList}>
                   {branchesByAlphaPage.map(page => {
@@ -146,7 +140,6 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                 </View>
               )}
 
-              {/* Familiar Face: home branch visit count */}
               {badge.id === 'familiar_face' && ctx.homeBranch && (
                 <View style={styles.detailList}>
                   <View style={[styles.detailRow, { backgroundColor: theme.borderSoft + '80' }]}>
@@ -162,36 +155,32 @@ export function BadgeDetailSheet({ badge, ctx, visible, onClose }: Props) {
                   </View>
                 </View>
               )}
-            </ScrollView>
-          </View>
-        )
-      })()}
-    </Modal>
-  )
-}
+            </BottomSheetScrollView>
+          )
+        })()}
+      </BottomSheetModal>
+    )
+  }
+)
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  topBar: {
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
+  sheetBg: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-  },
-  closeBtn: {
-    position: 'absolute',
-    right: 16,
-    top: 12,
-    padding: 4,
+  sheetShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 10,
   },
   content: {
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 32,
     alignItems: 'center',
   },
