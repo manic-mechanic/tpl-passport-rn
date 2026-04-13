@@ -1,17 +1,14 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useRef } from 'react'
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import { physicalBranches, sortedBranches } from '../composables/useRegion'
+import { physicalBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { authClient } from '../lib/auth-client'
 import { generateMRZ } from '../lib/mrz'
+import { branchNameForCode } from '../lib/utils'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import { BranchPickerModal } from './BranchPickerModal'
-
-function branchNameForCode(code: string): string {
-  return sortedBranches.find(b => b.BranchCode === code)?.BranchName ?? ''
-}
 
 export function PassportCard() {
   const theme = useTheme()

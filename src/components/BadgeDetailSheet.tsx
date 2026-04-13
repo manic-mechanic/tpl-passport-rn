@@ -7,8 +7,9 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '../hooks/useTheme'
 import { BadgeShape } from './BadgeShape'
 import { compassPoints } from '../composables/useBadges'
-import { branchesByAlphaPage, physicalBranches } from '../composables/useRegion'
+import { branchesByAlphaPage } from '../composables/useRegion'
 import { fonts, textSize } from '../theme'
+import { branchNameForCode } from '../lib/utils'
 import type { Badge, BadgeCtx } from '../composables/useBadges'
 
 interface Props {
@@ -18,10 +19,6 @@ interface Props {
 }
 
 const ANIMATION_CONFIGS = { damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }
-
-function branchName(code: string): string {
-  return physicalBranches.find(b => b.BranchCode === code)?.BranchName ?? code
-}
 
 function BadgeContent({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
   const theme = useTheme()
@@ -74,7 +71,7 @@ function BadgeContent({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
                 </Text>
                 <Text style={[styles.detailText, { color: done ? theme.textPrimary : theme.textMuted }]}>
                   <Text style={styles.detailDir}>{label}</Text>
-                  {` — ${branchName(code)}`}
+                  {` — ${branchNameForCode(code)}`}
                 </Text>
               </View>
             )
@@ -129,7 +126,7 @@ function BadgeContent({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
               {earned ? '✓' : '·'}
             </Text>
             <Text style={[styles.detailText, { color: earned ? theme.textPrimary : theme.textMuted }]}>
-              {branchName(ctx.homeBranch)}
+              {branchNameForCode(ctx.homeBranch)}
             </Text>
             <Text style={[styles.detailCount, { color: theme.textMuted }]}>
               {ctx.homeVisitCount}/5 visits
