@@ -1,54 +1,21 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useLastNonNull } from '@/src/hooks/useLastNonNull'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
-import Animated, { useSharedValue, useAnimatedStyle, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
-import { physicalBranches, branchesByAlphaPage } from '@/src/composables/useRegion'
+import { branchesByAlphaPage } from '@/src/composables/useRegion'
 import { BADGE_DISPLAY_ORDER, BADGES, useBadgeCtx } from '@/src/composables/useBadges'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
-import { StampShape } from '@/src/components/StampShape'
-import { BadgeCard } from '@/src/components/BadgeCard'
 import { BadgeDetailSheet } from '@/src/components/BadgeDetailSheet'
+import { StampGrid } from '@/src/components/StampGrid'
+import { BadgeGrid } from '@/src/components/BadgeGrid'
 import { fonts, textSize } from '@/src/theme'
 import type { Branch } from '@/src/types'
 import type { AlphaPage } from '@/src/composables/useRegion'
 import type { Badge } from '@/src/composables/useBadges'
-
-function AnimatedBadgeCell({
-  item, index, cellStyle, onPress, ctx,
-}: {
-  item: Badge
-  index: number
-  cellStyle: object
-  onPress: () => void
-  ctx: import('@/src/composables/useBadges').BadgeCtx
-}) {
-  const opacity = useSharedValue(0)
-  const translateY = useSharedValue(12)
-
-  useEffect(() => {
-    const delay = Math.min(index, 10) * 45
-    opacity.value = withDelay(delay, withTiming(1, { duration: 260 }))
-    translateY.value = withDelay(delay, withSpring(0, { damping: 18, stiffness: 260 }))
-  }, [])
-
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }))
-
-  return (
-    <Animated.View style={[cellStyle, animStyle]}>
-      <TouchableOpacity style={{ flex: 1 }} onPress={onPress} activeOpacity={0.7}>
-        <BadgeCard badge={item} ctx={ctx} />
-      </TouchableOpacity>
-    </Animated.View>
-  )
-}
 
 export default function PassportScreen() {
   const theme = useTheme()
@@ -65,8 +32,8 @@ export default function PassportScreen() {
 
   const { tab } = useLocalSearchParams<{ tab?: string }>()
 
-  const flatListRef = useRef<FlatList>(null)
-  const badgeListRef = useRef<FlatList>(null)
+  const flatListRef = useRef<FlatList<any>>(null)
+  const badgeListRef = useRef<FlatList<any>>(null)
 
   const pages: AlphaPage[] = branchesByAlphaPage
   const EXTRA_CREDIT_IDX = pages.length   // = 5
@@ -98,128 +65,12 @@ export default function PassportScreen() {
     }
   }, [activePage])
 
-  // Per-branch visit stats: total count, latest date, has photo, has note
-  function branchVisitInfo(branchCode: string) {
-    const visits = checkIns.filter(c => c.branchCode === branchCode)
-    if (visits.length === 0) return null
-    const total = visits.length
-    const latest = visits[0] // checkIns ordered newest-first
-    const dateStr = new Date(latest.timestamp).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
-    const hasPhoto = visits.some(c => !!c.photoUri)
-    const hasNote = visits.some(c => !!c.note?.trim())
-    return { total, dateStr, hasPhoto, hasNote }
-  }
-
   function isPageComplete(page: AlphaPage) {
     return page.branches.every(b => hasVisited(b.BranchCode))
   }
 
   function openBranch(branch: Branch) {
     router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })
-  }
-
-  const stampData = useMemo<(Branch | { BranchCode: string; _phantom: true })[]>(() => {
-    const branches = currentPage?.branches ?? []
-    return branches.length % 2 !== 0
-      ? [...branches, { BranchCode: '__phantom', _phantom: true as const }]
-      : branches
-  }, [currentPage])
-
-  type PhantomItem = { BranchCode: string; _phantom: true }
-  type StampItem = Branch | PhantomItem
-
-  function renderStampItem({ item, index }: { item: StampItem; index: number }) {
-    const isLeftCol = index % 2 === 0
-    const borderStyle = {
-      borderColor: theme.border,
-      borderBottomWidth: 1,
-      borderRightWidth: isLeftCol ? 1 : 0,
-    } as const
-
-    if ('_phantom' in item) {
-      return <View style={[styles.stampSlot, borderStyle]} />
-    }
-
-    const visited = hasVisited(item.BranchCode)
-    const info = visited ? branchVisitInfo(item.BranchCode) : null
-    const visitLabel = info
-      ? info.total === 1
-        ? info.dateStr
-        : `${info.dateStr} · ${info.total - 1} more visit${info.total - 1 === 1 ? '' : 's'}`
-      : ''
-
-    return (
-      <TouchableOpacity
-        style={[styles.stampSlot, borderStyle]}
-        onPress={() => openBranch(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.stampCenter}>
-          <StampShape
-            branchCode={item.BranchCode}
-            wardNo={item.WardNo}
-            ghost={!visited}
-          />
-        </View>
-        <View style={styles.stampBottom}>
-          <Text
-            style={[styles.stampName, { color: visited ? theme.textPrimary : theme.textMuted }]}
-            numberOfLines={2}
-          >
-            {item.BranchName}
-          </Text>
-          {info && (
-            <Text style={[styles.stampDate, { color: theme.textMuted }]}>
-              {visitLabel}
-            </Text>
-          )}
-          {info && (info.hasNote || info.hasPhoto) && (
-            <View style={styles.stampIcons}>
-              {info.hasNote && (
-                <Ionicons name="document-text-outline" size={11} color={theme.textMuted} />
-              )}
-              {info.hasPhoto && (
-                <Ionicons name="image-outline" size={11} color={theme.textMuted} />
-              )}
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    )
-  }
-
-  type BadgePhantom = { _phantom: true; id: string }
-  type BadgeItem = Badge | BadgePhantom
-
-  const badgeData = useMemo<BadgeItem[]>(() => {
-    return displayBadges.length % 2 !== 0
-      ? [...displayBadges, { _phantom: true as const, id: '__badge_phantom' }]
-      : displayBadges
-  }, [displayBadges])
-
-  function renderBadgeItem({ item, index }: { item: BadgeItem; index: number }) {
-    const isLeftCol = index % 2 === 0
-    const cellStyle = {
-      flex: 1,
-      borderColor: theme.border,
-      borderBottomWidth: 1 as const,
-      borderRightWidth: (isLeftCol ? 1 : 0) as 0 | 1,
-      borderStyle: 'dashed' as const,
-    }
-
-    if ('_phantom' in item) {
-      return <View style={[cellStyle, { minHeight: 140 }]} />
-    }
-
-    return (
-      <AnimatedBadgeCell
-        item={item}
-        index={index}
-        cellStyle={cellStyle}
-        onPress={() => { setActiveBadge(item); badgeSheetRef.current?.present() }}
-        ctx={badgeCtx}
-      />
-    )
   }
 
   const completeTabStyle = {
@@ -231,29 +82,6 @@ export default function PassportScreen() {
     borderRightWidth: 1 as const,
     borderRightColor: theme.tplNavy,
   }
-
-  const StampListHeader = (
-    <View style={[styles.pageHeaderRow, { backgroundColor: theme.bg, borderBottomColor: theme.border, borderBottomWidth: 1, borderStyle: 'dashed' }]}>
-      <Text style={[styles.pageRange, { color: theme.tplNavy, fontFamily: fonts.display }]}>
-        {currentPage?.label}
-      </Text>
-      <Text style={[styles.pageCount, { color: theme.textMuted }]}>
-        {currentPage?.branches.filter(b => hasVisited(b.BranchCode)).length}
-        /{currentPage?.branches.length}
-      </Text>
-    </View>
-  )
-
-  const BadgeListHeader = (
-    <View style={[styles.pageHeaderRow, { backgroundColor: theme.bg, borderBottomColor: theme.border, borderBottomWidth: 1, borderStyle: 'dashed' }]}>
-      <Text style={[styles.pageRange, { color: theme.tplNavy, fontFamily: fonts.display }]}>
-        Extra Credit
-      </Text>
-      <Text style={[styles.pageCount, { color: theme.textMuted }]}>
-        {earnedBadgeCount}/{BADGES.length}
-      </Text>
-    </View>
-  )
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -302,28 +130,20 @@ export default function PassportScreen() {
       </ScrollView>
 
       {isExtraCredit ? (
-        <FlatList
-          ref={badgeListRef}
-          data={badgeData}
-          keyExtractor={item => item.id}
-          numColumns={2}
-          renderItem={renderBadgeItem}
-          style={styles.list}
-          contentContainerStyle={{ paddingBottom: 8 }}
-          ListHeaderComponent={BadgeListHeader}
-          stickyHeaderIndices={[0]}
+        <BadgeGrid
+          listRef={badgeListRef}
+          displayBadges={displayBadges}
+          badgeCtx={badgeCtx}
+          earnedBadgeCount={earnedBadgeCount}
+          onBadgePress={(badge) => { setActiveBadge(badge); badgeSheetRef.current?.present() }}
         />
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={stampData}
-          keyExtractor={(item) => item.BranchCode}
-          numColumns={2}
-          renderItem={renderStampItem}
-          style={styles.list}
-          contentContainerStyle={{ paddingBottom: 8 }}
-          ListHeaderComponent={StampListHeader}
-          stickyHeaderIndices={[0]}
+        <StampGrid
+          listRef={flatListRef}
+          currentPage={currentPage}
+          hasVisited={hasVisited}
+          checkIns={checkIns}
+          openBranch={openBranch}
         />
       )}
 
@@ -402,59 +222,6 @@ const styles = StyleSheet.create({
     fontSize: textSize.md,
     fontWeight: '600',
   },
-  list: { flex: 1 },
-  pageHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  pageRange: {
-    fontSize: textSize.base,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  pageCount: {
-    fontSize: textSize.sm,
-    fontWeight: '500',
-  },
-  stampSlot: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 12,
-    minHeight: 140,
-    borderStyle: 'dashed',
-  },
-  stampCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  stampBottom: {
-    alignItems: 'center',
-    gap: 3,
-  },
-  stampName: {
-    fontSize: textSize.sm,
-    fontWeight: '500',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  stampDate: {
-    fontSize: textSize.xs,
-    fontWeight: '500',
-  },
-  stampIcons: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 1,
-  },
-  // Bottom page navigation
   pageNav: {
     flexDirection: 'row',
     alignItems: 'center',
