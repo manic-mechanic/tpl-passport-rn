@@ -1,8 +1,9 @@
 import { colors, dark } from '@/src/theme'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs'
-import { Tabs } from 'expo-router'
-import { Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native'
+import { Tabs, useRouter } from 'expo-router'
+import { useEffect } from 'react'
+import { Linking, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native'
 import Svg, { Circle, Polyline } from 'react-native-svg'
 
 function CheckInIcon({ color }: { color: string }) {
@@ -35,9 +36,25 @@ function CheckInTabButton({ onPress, accessibilityState }: BottomTabBarButtonPro
   )
 }
 
+export const unstable_settings = {
+  initialRouteName: '(home)',
+}
+
 export default function TabLayout() {
   const scheme = useColorScheme()
   const theme = scheme === 'dark' ? dark : colors
+  const router = useRouter()
+
+  // On cold launch (no incoming deep link), always land on home.
+  // iOS Expo Go caches the last route in AsyncStorage across launches and
+  // a simulator restart doesn't clear it, so initialRouteName alone isn't enough.
+  useEffect(() => {
+    Linking.getInitialURL().then(url => {
+      if (!url?.startsWith('tplpassportrn://')) {
+        router.navigate('/(tabs)/(home)')
+      }
+    })
+  }, [])
 
   return (
     <Tabs
