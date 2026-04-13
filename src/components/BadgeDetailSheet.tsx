@@ -154,7 +154,7 @@ export const BadgeDetailSheet = forwardRef<BottomSheetModal, Props>(
         bottomInset={tabBarHeight}
         backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
         handleIndicatorStyle={{ backgroundColor: theme.border }}
-        style={styles.sheetShadow}
+        style={[styles.sheetShadow, { shadowColor: theme.shadowColor }]}
         onDismiss={onDismiss}
         animationConfigs={ANIMATION_CONFIGS}
       >
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
   },
   sheetShadow: {
-    shadowColor: '#000',
+    shadowColor: '#000',  // overridden inline via theme.shadowColor
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,

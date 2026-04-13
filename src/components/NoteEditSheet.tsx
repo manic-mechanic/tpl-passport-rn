@@ -1,7 +1,7 @@
 import { BottomSheetModal, BottomSheetTextInput, BottomSheetView } from '@gorhom/bottom-sheet'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
@@ -24,7 +24,8 @@ function NoteEditSheetComponent(
   const tabBarHeight = useBottomTabBarHeight()
   const updateCheckIn = usePassportStore(s => s.updateCheckIn)
   const sheetRef = useRef<BottomSheetModal>(null)
-  const inputRef = useRef<TextInput>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const inputRef = useRef<any>(null)
 
   const [visit, setVisit] = useState<CheckIn | null>(null)
   const [draftNote, setDraftNote] = useState('')
@@ -52,7 +53,7 @@ function NoteEditSheetComponent(
       bottomInset={tabBarHeight}
       backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
       handleIndicatorStyle={{ backgroundColor: theme.border }}
-      style={styles.sheetShadow}
+      style={[styles.sheetShadow, { shadowColor: theme.shadowColor }]}
       animationConfigs={ANIMATION_CONFIGS}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
   },
   sheetShadow: {
-    shadowColor: '#000',
+    shadowColor: '#000',  // overridden inline via theme.shadowColor
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,

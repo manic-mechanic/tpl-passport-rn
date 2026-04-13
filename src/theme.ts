@@ -7,6 +7,7 @@ export const colors = {
   textMuted: '#767676',
   border: '#d4cfc4',
   borderSoft: '#e8e3d8',
+  shadowColor: '#001c71',
 }
 
 export const dark = {
@@ -19,6 +20,7 @@ export const dark = {
   textMuted: '#999999',
   border: '#333333',
   borderSoft: '#2a2a2a',
+  shadowColor: '#000000',
 }
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }

@@ -129,7 +129,7 @@ export default function SettingsScreen() {
                     key={String(opt.value)}
                     style={[
                       styles.themeBtn,
-                      profile.theme === opt.value && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                      profile.theme === opt.value && [styles.themeBtnActive, { backgroundColor: theme.surface, shadowColor: theme.shadowColor }],
                     ]}
                     onPress={() => updateProfile({ theme: opt.value })}
                   >
@@ -163,7 +163,7 @@ export default function SettingsScreen() {
                     key={String(opt.v)}
                     style={[
                       styles.themeBtn,
-                      profile.bypassLocationFence === opt.v && [styles.themeBtnActive, { backgroundColor: theme.surface }],
+                      profile.bypassLocationFence === opt.v && [styles.themeBtnActive, { backgroundColor: theme.surface, shadowColor: theme.shadowColor }],
                     ]}
                     onPress={() => updateProfile({ bypassLocationFence: opt.v })}
                   >
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   themeBtnActive: {
-    shadowColor: '#000',
+    shadowColor: '#000',  // overridden inline via theme.shadowColor
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 2,

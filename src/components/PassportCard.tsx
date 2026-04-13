@@ -31,7 +31,7 @@ export function PassportCard() {
 
   return (
     <>
-      <View style={[styles.shadow, { borderRadius: radius.lg }]}>
+      <View style={[styles.shadow, { borderRadius: radius.lg, shadowColor: theme.shadowColor }]}>
         <View style={[styles.card, { borderRadius: radius.lg }]}>
           <View style={[styles.sideBorders, { borderColor: theme.tplBlue, borderRadius: radius.lg }]} pointerEvents="none" />
           <View style={[styles.cardTop, { backgroundColor: theme.tplBlue }]}>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   shadow: {
-    shadowColor: '#001c71',
+    shadowColor: '#000',  // overridden inline via theme.shadowColor
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.14,
     shadowRadius: 14,
