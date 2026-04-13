@@ -91,13 +91,13 @@ export function BadgeShape({ badge, ctx, size = 64 }: Props) {
   // Conic circle (4 compass quadrants) + compass rose overlay (mirrors IconCompassRose.vue)
   if (badge.id === 'navigator') {
     const v = ctx.visitedBranchCodes
-    const hit = theme.bg   // web: '#f8f5f0' ≈ theme.bg
+    const hit = '#fff'
     const miss = theme.border
     const nHit = v.has(compassPoints.n)
     const eHit = v.has(compassPoints.e)
     const sHit = v.has(compassPoints.s)
     const wHit = v.has(compassPoints.w)
-    const dark = 'rgba(0,0,0,0.22)'
+    const dark = 'rgba(0,0,0,0.7)'
     const faint = 'rgba(0,0,0,0.12)'
 
     return (
@@ -120,7 +120,7 @@ export function BadgeShape({ badge, ctx, size = 64 }: Props) {
         <SvgText x="45" y="34" textAnchor="middle" fontSize="9"  fontWeight="700" fill={eHit ? dark : faint}>E</SvgText>
         <SvgText x="32" y="47" textAnchor="middle" fontSize="9"  fontWeight="700" fill={sHit ? dark : faint}>S</SvgText>
         <SvgText x="19" y="34" textAnchor="middle" fontSize="9"  fontWeight="700" fill={wHit ? dark : faint}>W</SvgText>
-        <SvgCircle cx="32" cy="32" r="2" fill="rgba(0,0,0,0.15)" />
+        <SvgCircle cx="32" cy="32" r="2" fill="rgba(0,0,0,0.7)" />
       </Svg>
     )
   }
