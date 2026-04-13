@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
 import { BADGES, type Badge, type BadgeCtx } from '../composables/useBadges'
-import { textSize } from '../theme'
 import { BadgeShape } from './BadgeShape'
 
 interface Props {

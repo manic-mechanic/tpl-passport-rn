@@ -65,7 +65,7 @@ function RootLayoutNav() {
   // When the user signs in, sync check-ins with server and migrate local photos to R2.
   useEffect(() => {
     if (!session?.user) return;
-    const { checkIns, setCheckIns, setCheckInPhoto, updateProfile } = usePassportStore.getState();
+    const { checkIns, setCheckIns, setCheckInPhoto } = usePassportStore.getState();
     syncCheckIns(checkIns, setCheckIns);
     migrateLocalPhotos(checkIns, setCheckInPhoto);
     fetchProfile().then(p => {

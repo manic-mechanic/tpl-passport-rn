@@ -10,7 +10,7 @@ import { authClient } from '@/src/lib/auth-client'
 import { sortedBranches } from '@/src/composables/useRegion'
 import { BranchPickerModal } from '@/src/components/BranchPickerModal'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
-import { fonts, radius, textSize } from '@/src/theme'
+import { radius, textSize } from '@/src/theme'
 
 const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Light' },

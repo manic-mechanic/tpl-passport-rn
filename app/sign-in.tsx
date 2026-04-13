@@ -9,7 +9,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { authClient } from '@/src/lib/auth-client'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
-import { fonts, radius, textSize } from '@/src/theme'
+import { radius, textSize } from '@/src/theme'
 
 export default function SignInScreen() {
   const theme = useTheme()

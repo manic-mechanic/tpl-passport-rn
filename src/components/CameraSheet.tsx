@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useTheme } from '../hooks/useTheme'
 
 interface Props {
   visible: boolean
@@ -22,7 +21,6 @@ interface Props {
 }
 
 export function CameraSheet({ visible, onCapture, onClose }: Props) {
-  const theme = useTheme()
   const insets = useSafeAreaInsets()
   const cameraRef = useRef<CameraView>(null)
   const [permission, requestPermission] = useCameraPermissions()
