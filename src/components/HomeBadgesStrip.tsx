@@ -1,27 +1,30 @@
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { useRouter, type Href } from 'expo-router'
+import { useRef, useState, useCallback } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useTheme } from '../hooks/useTheme'
 import { BADGES, useBadgeCtx, type Badge, type BadgeCtx } from '../composables/useBadges'
 import { fonts, textSize } from '../theme'
 import { BadgeShape } from './BadgeShape'
+import { BadgeDetailSheet } from './BadgeDetailSheet'
 
 function SeeAll() {
   const theme = useTheme()
   const router = useRouter()
   return (
-    <TouchableOpacity onPress={() => router.push('/(tabs)/(explore)' as Href)} hitSlop={8}>
+    <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/(passport)', params: { tab: 'extra-credit' } })} hitSlop={8}>
       <Text style={[styles.seeAll, { color: theme.tplBlue }]}>See all</Text>
     </TouchableOpacity>
   )
 }
 
-function BadgeTile({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
+function BadgeTile({ badge, ctx, onPress }: { badge: Badge; ctx: BadgeCtx; onPress: () => void }) {
   const theme = useTheme()
   const earned = badge.earned(ctx)
   const progress = !earned && badge.progress ? badge.progress(ctx) : null
 
   return (
-    <View style={styles.tile}>
+    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.7}>
       <BadgeShape badge={badge} ctx={ctx} size={40} />
       <Text style={[styles.badgeName, { color: theme.textMuted }]} numberOfLines={2}>
         {badge.title}
@@ -41,7 +44,7 @@ function BadgeTile({ badge, ctx }: { badge: Badge; ctx: BadgeCtx }) {
           </Text>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   )
 }
 
@@ -84,6 +87,14 @@ export function HomeBadgesStrip() {
   const theme = useTheme()
   const ctx = useBadgeCtx()
   const highlights = getHighlightBadges(ctx)
+  const badgeSheetRef = useRef<BottomSheetModal>(null)
+  const [activeBadge, setActiveBadge] = useState<Badge | null>(null)
+  const lastBadgeRef = useRef<Badge | null>(null)
+  if (activeBadge) lastBadgeRef.current = activeBadge
+
+  useFocusEffect(useCallback(() => {
+    return () => { badgeSheetRef.current?.dismiss() }
+  }, []))
 
   return (
     <View>
@@ -96,10 +107,20 @@ export function HomeBadgesStrip() {
       <View style={styles.grid}>
         {highlights.map(badge => (
           <View key={badge.id} style={styles.cell}>
-            <BadgeTile badge={badge} ctx={ctx} />
+            <BadgeTile
+              badge={badge}
+              ctx={ctx}
+              onPress={() => { setActiveBadge(badge); badgeSheetRef.current?.present() }}
+            />
           </View>
         ))}
       </View>
+      <BadgeDetailSheet
+        ref={badgeSheetRef}
+        badge={lastBadgeRef.current}
+        ctx={ctx}
+        onDismiss={() => setActiveBadge(null)}
+      />
     </View>
   )
 }
