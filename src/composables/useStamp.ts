@@ -1,1 +1,1 @@
-export * from '../shared/stamp'
+export * from '@tpl-passport/shared'

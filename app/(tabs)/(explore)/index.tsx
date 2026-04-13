@@ -4,7 +4,7 @@ import { BADGE_DISPLAY_ORDER, BADGES, useBadgeCtx } from '@/src/composables/useB
 
 const MAX_VISIBLE_STAMPS = 4
 import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
-import routesData from '@/src/data/routes.json'
+import routesData from '@tpl-passport/shared/data/routes.json'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
 import { ScreenHeader } from '@/src/components/ScreenHeader'

@@ -1,11 +1,11 @@
 // React wrapper around the shared badge logic.
-// Pure functions and types are in src/shared/badges.ts.
+// Pure functions and types are in @tpl-passport/shared.
 
 import { useMemo } from 'react'
 import { usePassportStore } from '../stores/passport'
-import { buildBadgeCtx } from '../shared/badges'
+import { buildBadgeCtx } from '@tpl-passport/shared'
 
-export * from '../shared/badges'
+export * from '@tpl-passport/shared'
 
 // React hook — builds badge context from the Zustand passport store.
 export function useBadgeCtx() {

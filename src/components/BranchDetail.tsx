@@ -14,7 +14,7 @@ import { StampShape } from './StampShape'
 import { EventsSection } from './EventsSection'
 import { HistorySection } from './HistorySection'
 import { VisitRow } from './VisitRow'
-import branchHoursData from '../data/branch-hours.json'
+import branchHoursData from '@tpl-passport/shared/data/branch-hours.json'
 
 // Explicit annotation (not a cast): TypeScript validates the JSON shape against this type.
 const branchHours: Record<string, Record<string, string>> = branchHoursData

@@ -13,7 +13,7 @@ interface Props {
   badgeCtx: BadgeCtx
   earnedBadgeCount: number
   onBadgePress: (badge: Badge) => void
-  listRef: React.RefObject<FlatList<BadgeItem>>
+  listRef: React.RefObject<FlatList<BadgeItem> | null>
 }
 
 export function BadgeGrid({ displayBadges, badgeCtx, earnedBadgeCount, onBadgePress, listRef }: Props) {

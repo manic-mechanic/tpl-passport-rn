@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tpl-passport/shared": "file:../tpl-passport-auth/packages/shared",
     "@better-auth/expo": "^1.6.0",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.8",

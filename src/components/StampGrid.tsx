@@ -14,7 +14,7 @@ interface Props {
   hasVisited: (code: string) => boolean
   checkIns: CheckIn[]
   openBranch: (branch: Branch) => void
-  listRef: React.RefObject<FlatList<StampItem>>
+  listRef: React.RefObject<FlatList<StampItem> | null>
 }
 
 function branchVisitInfo(checkIns: CheckIn[], branchCode: string) {

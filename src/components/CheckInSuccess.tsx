@@ -7,7 +7,7 @@ import Animated, {
   withSpring, withDelay, withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { BADGES, buildBadgeCtx, type Badge } from '../shared/badges'
+import { BADGES, buildBadgeCtx, type Badge } from '@tpl-passport/shared'
 import { useTheme } from '../hooks/useTheme'
 import { usePhotoPicker } from '../hooks/usePhotoPicker'
 import { usePassportStore } from '../stores/passport'

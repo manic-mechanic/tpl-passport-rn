@@ -1,1 +1,1 @@
-export * from '../shared/region'
+export * from '@tpl-passport/shared'
