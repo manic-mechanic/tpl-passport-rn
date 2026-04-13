@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
@@ -20,6 +21,7 @@ export default function PassportScreen() {
 
   const router = useRouter()
   const [activePage, setActivePage] = useState(0)
+  const badgeSheetRef = useRef<BottomSheetModal>(null)
   const [activeBadge, setActiveBadge] = useState<Badge | null>(null)
   const lastBadgeRef = useRef<Badge | null>(null)
   if (activeBadge) lastBadgeRef.current = activeBadge
@@ -27,6 +29,8 @@ export default function PassportScreen() {
   const checkIns = usePassportStore(s => s.checkIns)
   const hasVisited = usePassportStore(s => s.hasVisited)
   const badgeCtx = useBadgeCtx()
+
+  const { tab } = useLocalSearchParams<{ tab?: string }>()
 
   const flatListRef = useRef<FlatList>(null)
   const badgeListRef = useRef<FlatList>(null)
@@ -47,6 +51,11 @@ export default function PassportScreen() {
     () => BADGE_DISPLAY_ORDER.map(id => BADGES.find(b => b.id === id)).filter((b): b is Badge => !!b),
     []
   )
+
+  useFocusEffect(useCallback(() => {
+    if (tab === 'extra-credit') setActivePage(EXTRA_CREDIT_IDX)
+    return () => { badgeSheetRef.current?.dismiss() }
+  }, [tab]))
 
   useEffect(() => {
     if (isExtraCredit) {
@@ -172,7 +181,7 @@ export default function PassportScreen() {
     return (
       <TouchableOpacity
         style={cellStyle}
-        onPress={() => setActiveBadge(item)}
+        onPress={() => { setActiveBadge(item); badgeSheetRef.current?.present() }}
         activeOpacity={0.7}
       >
         <BadgeCard badge={item} ctx={badgeCtx} />
@@ -323,10 +332,10 @@ export default function PassportScreen() {
       </View>
 
       <BadgeDetailSheet
+        ref={badgeSheetRef}
         badge={lastBadgeRef.current}
         ctx={badgeCtx}
-        visible={activeBadge !== null}
-        onClose={() => setActiveBadge(null)}
+        onDismiss={() => setActiveBadge(null)}
       />
     </View>
   )
