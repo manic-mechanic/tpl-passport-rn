@@ -198,32 +198,21 @@ const evtStyles = StyleSheet.create({
 
 // ─── HistorySection ───────────────────────────────────────────────────────────
 
-function HistorySection({ branchCode }: { branchCode: string }) {
+function HistorySection({ branchCode, visitCount }: { branchCode: string; visitCount: number }) {
   const theme = useTheme()
-  const [expanded, setExpanded] = useState(false)
   const entries = branchHistory[branchCode]
-  if (!entries?.length) return null
-
-  const visible = expanded ? entries : entries.slice(0, 3)
+  if (!entries?.length || visitCount === 0) return null
 
   return (
     <View style={hstyles.section}>
       <Text style={[hstyles.heading, { color: theme.textPrimary }]}>Branch History</Text>
-      {visible.map((entry, i) => (
-        <View key={entry.year} style={hstyles.row}>
-          <View style={[hstyles.yearBadge, { backgroundColor: `${theme.tplBlue}14`, borderColor: `${theme.tplBlue}33` }]}>
-            <Text style={[hstyles.year, { color: theme.tplBlue }]}>{entry.year}</Text>
-          </View>
-          <Text style={[hstyles.detail, { color: theme.textPrimary }]}>{entry.detail}</Text>
+      <View style={hstyles.row}>
+        <View style={[hstyles.yearBadge, { backgroundColor: `${theme.tplBlue}14`, borderColor: `${theme.tplBlue}33` }]}>
+          <Text style={[hstyles.year, { color: theme.tplBlue }]}>{entries[0].year}</Text>
         </View>
-      ))}
-      {entries.length > 3 && (
-        <TouchableOpacity onPress={() => setExpanded(e => !e)}>
-          <Text style={[hstyles.toggle, { color: theme.tplBlue }]}>
-            {expanded ? 'Show less' : `Show all ${entries.length} entries`}
-          </Text>
-        </TouchableOpacity>
-      )}
+        <Text style={[hstyles.detail, { color: theme.textPrimary }]}>{entries[0].detail}</Text>
+      </View>
+      <Text style={[hstyles.locked, { color: theme.textMuted }]}>Come back to unlock more history.</Text>
     </View>
   )
 }
@@ -258,10 +247,10 @@ const hstyles = StyleSheet.create({
     lineHeight: 18,
     paddingTop: 2,
   },
-  toggle: {
-    marginTop: 2,
+  locked: {
+    marginTop: 4,
     fontSize: textSize.sm,
-    fontWeight: '600',
+    fontStyle: 'italic',
   },
 })
 
@@ -477,7 +466,7 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
       <EventsSection branchName={branch.BranchName} branchWebsite={branch.Website} />
 
       {/* History */}
-      <HistorySection branchCode={branch.BranchCode} />
+      <HistorySection branchCode={branch.BranchCode} visitCount={pastVisits.length} />
 
       {/* Nearby branches */}
       {nearbyBranches.length > 0 && (
