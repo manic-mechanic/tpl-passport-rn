@@ -14,8 +14,10 @@ import { CameraSheet } from './CameraSheet'
 import { NoteEditSheet, type NoteEditSheetMethods } from './NoteEditSheet'
 import { StampShape } from './StampShape'
 import branchHoursData from '../data/branch-hours.json'
+import branchHistoryData from '../data/branch-history.json'
 
-const branchHours = branchHoursData as Record<string, Record<string, string>>
+const branchHours   = branchHoursData   as Record<string, Record<string, string>>
+const branchHistory = branchHistoryData as Record<string, { year: string; detail: string }[]>
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 // ─── Event helpers ────────────────────────────────────────────────────────────
@@ -189,6 +191,75 @@ const evtStyles = StyleSheet.create({
   },
   allEvents: {
     marginTop: 10,
+    fontSize: textSize.sm,
+    fontWeight: '600',
+  },
+})
+
+// ─── HistorySection ───────────────────────────────────────────────────────────
+
+function HistorySection({ branchCode }: { branchCode: string }) {
+  const theme = useTheme()
+  const [expanded, setExpanded] = useState(false)
+  const entries = branchHistory[branchCode]
+  if (!entries?.length) return null
+
+  const visible = expanded ? entries : entries.slice(0, 3)
+
+  return (
+    <View style={hstyles.section}>
+      <Text style={[hstyles.heading, { color: theme.textPrimary }]}>Branch History</Text>
+      {visible.map((entry, i) => (
+        <View key={entry.year} style={hstyles.row}>
+          <View style={[hstyles.yearBadge, { backgroundColor: `${theme.tplBlue}14`, borderColor: `${theme.tplBlue}33` }]}>
+            <Text style={[hstyles.year, { color: theme.tplBlue }]}>{entry.year}</Text>
+          </View>
+          <Text style={[hstyles.detail, { color: theme.textPrimary }]}>{entry.detail}</Text>
+        </View>
+      ))}
+      {entries.length > 3 && (
+        <TouchableOpacity onPress={() => setExpanded(e => !e)}>
+          <Text style={[hstyles.toggle, { color: theme.tplBlue }]}>
+            {expanded ? 'Show less' : `Show all ${entries.length} entries`}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+}
+
+const hstyles = StyleSheet.create({
+  section: { marginBottom: 24 },
+  heading: { fontSize: textSize.base, fontWeight: '600', marginBottom: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
+  },
+  yearBadge: {
+    flexShrink: 0,
+    width: 44,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  year: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  detail: {
+    flex: 1,
+    fontSize: textSize.sm,
+    lineHeight: 18,
+    paddingTop: 2,
+  },
+  toggle: {
+    marginTop: 2,
     fontSize: textSize.sm,
     fontWeight: '600',
   },
@@ -404,6 +475,9 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
 
       {/* Events */}
       <EventsSection branchName={branch.BranchName} branchWebsite={branch.Website} />
+
+      {/* History */}
+      <HistorySection branchCode={branch.BranchCode} />
 
       {/* Nearby branches */}
       {nearbyBranches.length > 0 && (
