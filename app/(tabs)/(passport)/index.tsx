@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useLastNonNull } from '@/src/hooks/useLastNonNull'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
+import Animated, { useSharedValue, useAnimatedStyle, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -16,6 +17,38 @@ import { fonts, textSize } from '@/src/theme'
 import type { Branch } from '@/src/types'
 import type { AlphaPage } from '@/src/composables/useRegion'
 import type { Badge } from '@/src/composables/useBadges'
+
+function AnimatedBadgeCell({
+  item, index, cellStyle, onPress, ctx,
+}: {
+  item: Badge
+  index: number
+  cellStyle: object
+  onPress: () => void
+  ctx: import('@/src/composables/useBadges').BadgeCtx
+}) {
+  const opacity = useSharedValue(0)
+  const translateY = useSharedValue(12)
+
+  useEffect(() => {
+    const delay = Math.min(index, 10) * 45
+    opacity.value = withDelay(delay, withTiming(1, { duration: 260 }))
+    translateY.value = withDelay(delay, withSpring(0, { damping: 18, stiffness: 260 }))
+  }, [])
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }))
+
+  return (
+    <Animated.View style={[cellStyle, animStyle]}>
+      <TouchableOpacity style={{ flex: 1 }} onPress={onPress} activeOpacity={0.7}>
+        <BadgeCard badge={item} ctx={ctx} />
+      </TouchableOpacity>
+    </Animated.View>
+  )
+}
 
 export default function PassportScreen() {
   const theme = useTheme()
@@ -179,13 +212,13 @@ export default function PassportScreen() {
     }
 
     return (
-      <TouchableOpacity
-        style={cellStyle}
+      <AnimatedBadgeCell
+        item={item}
+        index={index}
+        cellStyle={cellStyle}
         onPress={() => { setActiveBadge(item); badgeSheetRef.current?.present() }}
-        activeOpacity={0.7}
-      >
-        <BadgeCard badge={item} ctx={badgeCtx} />
-      </TouchableOpacity>
+        ctx={badgeCtx}
+      />
     )
   }
 
