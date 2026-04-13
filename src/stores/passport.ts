@@ -71,12 +71,17 @@ export const usePassportStore = create<PassportStore>()(
             c.timestamp === timestamp ? { ...c, photoUri: uri } : c
           )
         })),
-      updateCheckIn: (timestamp, patch) =>
+      updateCheckIn: (timestamp, patch) => {
         set(s => ({
           checkIns: s.checkIns.map(c =>
             c.timestamp === timestamp ? { ...c, ...patch } : c
           )
-        })),
+        }))
+        const updated = get().checkIns.find(c => c.timestamp === timestamp)
+        if (updated) {
+          import('../lib/sync').then(({ pushCheckIn }) => pushCheckIn(updated).catch(() => {}))
+        }
+      },
       updateProfile: (patch) => {
         const current = get().profile
         set(s => ({ profile: { ...s.profile, ...patch } }))

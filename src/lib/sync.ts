@@ -54,10 +54,23 @@ export async function syncCheckIns(
   )
 
   const localMap = new Map(localCheckIns.map(c => [key(c.branchCode, c.timestamp), c]))
-  // Server wins on conflict (same key); keep local-only records too
-  const merged = Array.from(
-    new Map([...localMap, ...serverMap]).values()
-  ).sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+  // Server wins on conflict, but preserve local note/photo if server has none.
+  // This covers the race where a local edit hasn't been pushed yet when sync runs.
+  const mergedMap = new Map(serverMap)
+  for (const [k, local] of localMap) {
+    const server = mergedMap.get(k)
+    if (!server) {
+      mergedMap.set(k, { ...local, photoUri: local.photoUri })
+    } else {
+      mergedMap.set(k, {
+        ...server,
+        note: server.note || local.note,
+        photoUri: server.photoUri ?? local.photoUri,
+      })
+    }
+  }
+  const merged = Array.from(mergedMap.values()).sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 
   setCheckIns(merged)
 
