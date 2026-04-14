@@ -173,6 +173,15 @@ export default function ExploreScreen() {
           })}
         </View>
 
+        {/* ── Browse all ───────────────────────────────────────────── */}
+        <TouchableOpacity
+          style={[styles.browseBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          onPress={() => router.push('./branches')}
+        >
+          <Text style={[styles.browseBtnText, { color: theme.tplBlue }]}>Browse all branches</Text>
+          <Ionicons name="chevron-forward" size={14} color={theme.tplBlue} />
+        </TouchableOpacity>
+
         {/* ── Badges ───────────────────────────────────────────────── */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary, fontFamily: fonts.display }]}>
@@ -294,6 +303,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 14,
+  },
+  // Browse all
+  browseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  browseBtnText: {
+    fontSize: textSize.md,
+    fontWeight: '600',
   },
   // Badges
   badgeGrid: {

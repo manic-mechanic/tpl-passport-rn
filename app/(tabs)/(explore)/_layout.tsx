@@ -5,6 +5,7 @@ export default function ExploreLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="branch/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="branches" options={{ headerShown: false }} />
     </Stack>
   )
 }
