@@ -1,6 +1,24 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useRef } from 'react'
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Defs, G, Mask, Path, Rect, Svg } from 'react-native-svg'
+
+// boring-avatars beam algorithm (inlined — package utilities not exported at runtime)
+function _hash(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) { h = Math.imul(h, 31) + name.charCodeAt(i) | 0 }
+  return Math.abs(h)
+}
+function _unit(n: number, range: number, idx?: number) {
+  const v = n % range
+  return idx !== undefined && Math.floor(n / 10 ** idx) % 10 % 2 === 0 ? -v : v
+}
+function _color(n: number, colors: string[]) { return colors[n % colors.length] }
+function _bool(n: number, idx: number) { return Math.floor(n / 10 ** idx) % 10 % 2 === 0 }
+function _contrast(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000000' : '#ffffff'
+}
 import { physicalBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { authClient } from '../lib/auth-client'
@@ -9,6 +27,74 @@ import { branchNameForCode } from '../lib/utils'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import { BranchPickerModal } from './BranchPickerModal'
+
+const AVATAR_COLORS = [
+  '#005fc0', // TPL blue
+  '#001c71', // TPL navy
+  '#1a6b4a', // forest green
+  '#6b3fa0', // purple
+  '#0d7a8a', // teal
+  '#c45520', // burnt orange
+  '#8b4513', // terracotta
+  '#f5d6db', // light rose   (stamp hue 350, 90% l)
+  '#d6f5ed', // light mint   (stamp hue 165, 90% l)
+  '#e8d8f5', // light lavender (stamp hue 275, 90% l)
+]
+const S = 36
+
+function getBeamData(name: string) {
+  const n = _hash(name || 'TPL Passport')
+  const wrapperColor = _color(n, AVATAR_COLORS)
+  const wx = _unit(n, 10, 1)
+  const wy = _unit(n, 10, 2)
+  const wrapperTranslateX = wx < 5 ? wx + S / 9 : wx
+  const wrapperTranslateY = wy < 5 ? wy + S / 9 : wy
+  return {
+    backgroundColor: _color(n + 13, AVATAR_COLORS),
+    wrapperColor,
+    faceColor: _contrast(wrapperColor),
+    wrapperTranslateX,
+    wrapperTranslateY,
+    wrapperRotate: _unit(n, 360),
+    wrapperScale: 1 + _unit(n, S / 12) / 10,
+    isMouthOpen: _bool(n, 2),
+    isCircle: _bool(n, 1),
+    eyeSpread: _unit(n, 5),
+    mouthSpread: _unit(n, 3),
+    faceRotate: _unit(n, 10, 3),
+    faceTranslateX: wrapperTranslateX > S / 6 ? wrapperTranslateX / 2 : _unit(n, 8, 1),
+    faceTranslateY: wrapperTranslateY > S / 6 ? wrapperTranslateY / 2 : _unit(n, 7, 2),
+  }
+}
+
+function BeamAvatar({ name }: { name: string }) {
+  const d = getBeamData(name)
+  return (
+    <Svg viewBox="0 0 36 36" width="100%" height="100%">
+      <Defs>
+        <Mask id="beam-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+          <Rect width="36" height="36" rx={72} fill="#FFFFFF" />
+        </Mask>
+      </Defs>
+      <G mask="url(#beam-mask)">
+        <Rect width="36" height="36" fill={d.backgroundColor} />
+        <Rect x="0" y="0" width="36" height="36"
+          transform={`translate(${d.wrapperTranslateX} ${d.wrapperTranslateY}) rotate(${d.wrapperRotate} 18 18) scale(${d.wrapperScale})`}
+          fill={d.wrapperColor}
+          rx={d.isCircle ? 36 : 6}
+        />
+        <G transform={`translate(${d.faceTranslateX} ${d.faceTranslateY}) rotate(${d.faceRotate} 18 18)`}>
+          {d.isMouthOpen
+            ? <Path d={`M15 ${19 + d.mouthSpread}c2 1 4 1 6 0`} stroke={d.faceColor} fill="none" strokeLinecap="round" />
+            : <Path d={`M13,${19 + d.mouthSpread} a1,0.75 0 0,0 10,0`} fill={d.faceColor} />
+          }
+          <Rect x={14 - d.eyeSpread} y="14" width="1.5" height="2" rx="1" fill={d.faceColor} />
+          <Rect x={20 + d.eyeSpread} y="14" width="1.5" height="2" rx="1" fill={d.faceColor} />
+        </G>
+      </G>
+    </Svg>
+  )
+}
 
 export function PassportCard() {
   const theme = useTheme()
@@ -23,7 +109,6 @@ export function PassportCard() {
   const visitCount = new Set(checkIns.map(c => c.branchCode)).size
   const progressPct = Math.round((visitCount / physicalBranches.length) * 100)
   const issueYear = new Date().getFullYear()
-  const avatarLetter = profile.name?.trim() ? profile.name[0].toUpperCase() : '?'
   const { line1: mrzLine1, line2: mrzLine2 } = generateMRZ(profile.name, visitCount, progressPct, issueYear)
 
   return (
@@ -74,10 +159,8 @@ export function PassportCard() {
                   )}
                 </View>
               </View>
-              <View style={[styles.avatar, { borderColor: theme.tplBlue, backgroundColor: `${theme.tplBlue}1a` }]}>
-                <Text style={[styles.avatarLetter, { color: theme.tplBlue, fontFamily: fonts.display }]}>
-                  {avatarLetter}
-                </Text>
+              <View style={[styles.avatar, { borderColor: theme.border }]}>
+                <BeamAvatar name={[profile.name, profile.homeBranch].filter(Boolean).join('|') || 'TPL Passport'} />
               </View>
             </View>
 
@@ -195,14 +278,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 78,
     borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     flexShrink: 0,
-  },
-  avatarLetter: {
-    fontSize: textSize.xxxl,
-    fontWeight: '700',
+    borderWidth: 2,
+    padding: 3,
   },
   progressTrack: {
     height: 5,

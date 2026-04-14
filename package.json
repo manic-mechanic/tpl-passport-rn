@@ -10,13 +10,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@tpl-passport/shared": "file:../tpl-passport-auth/packages/shared",
     "@better-auth/expo": "^1.6.0",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.8",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "^7.1.8",
+    "@tpl-passport/shared": "file:../tpl-passport-auth/packages/shared",
     "better-auth": "^1.6.0",
+    "boring-avatars": "^2.0.4",
     "expo": "~54.0.33",
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.13",
