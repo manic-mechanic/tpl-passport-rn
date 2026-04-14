@@ -9,6 +9,8 @@ import { usePassportStore } from '@/src/stores/passport'
 import { authClient } from '@/src/lib/auth-client'
 import { sortedBranches } from '@/src/composables/useRegion'
 import { BranchPickerModal } from '@/src/components/BranchPickerModal'
+import { ChangeEmailSheet, type ChangeEmailSheetMethods } from '@/src/components/ChangeEmailSheet'
+import { ChangePasswordSheet, type ChangePasswordSheetMethods } from '@/src/components/ChangePasswordSheet'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { radius, textSize } from '@/src/theme'
 
@@ -26,6 +28,8 @@ export default function SettingsScreen() {
   const updateProfile = usePassportStore(s => s.updateProfile)
   const { data: session } = authClient.useSession()
   const branchPickerRef = useRef<BottomSheetModal>(null)
+  const changeEmailRef = useRef<ChangeEmailSheetMethods>(null)
+  const changePasswordRef = useRef<ChangePasswordSheetMethods>(null)
 
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(profile.name)
@@ -94,12 +98,28 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Home branch */}
-                <View style={styles.settingRow}>
+                <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
                   <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Home branch</Text>
                   <TouchableOpacity onPress={() => branchPickerRef.current?.present()} hitSlop={8}>
                     <Text style={[styles.actionLink, { color: homeBranch ? theme.textPrimary : theme.textMuted }]}>
                       {homeBranch ? homeBranch.BranchName : 'Select branch'}
                     </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Change email */}
+                <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: theme.borderSoft }]}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Email</Text>
+                  <TouchableOpacity onPress={() => changeEmailRef.current?.present()} hitSlop={8}>
+                    <Text style={[styles.actionLink, { color: theme.textMuted }]}>Change</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Change password */}
+                <View style={styles.settingRow}>
+                  <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>Password</Text>
+                  <TouchableOpacity onPress={() => changePasswordRef.current?.present()} hitSlop={8}>
+                    <Text style={[styles.actionLink, { color: theme.textMuted }]}>Change</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -234,6 +254,8 @@ export default function SettingsScreen() {
         selectedCode={profile.homeBranch}
         onSelect={code => updateProfile({ homeBranch: code })}
       />
+      <ChangeEmailSheet ref={changeEmailRef} />
+      <ChangePasswordSheet ref={changePasswordRef} />
     </View>
   )
 }

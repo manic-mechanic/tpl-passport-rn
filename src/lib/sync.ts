@@ -55,7 +55,7 @@ export async function syncCheckIns(
   const { merged, toPush } = mergeCheckIns(localCheckIns, serverCheckIns)
   setCheckIns(merged)
   for (const ci of toPush) {
-    pushCheckIn(ci).catch(() => {})
+    await pushCheckIn(ci).catch(() => {})
   }
 }
 
