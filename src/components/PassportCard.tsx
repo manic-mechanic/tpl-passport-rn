@@ -73,7 +73,7 @@ function BeamAvatar({ name }: { name: string }) {
     <Svg viewBox="0 0 36 36" width="100%" height="100%">
       <Defs>
         <Mask id="beam-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
-          <Rect width="36" height="36" rx={72} fill="#FFFFFF" />
+          <Rect width="36" height="36" fill="#FFFFFF" />
         </Mask>
       </Defs>
       <G mask="url(#beam-mask)">
