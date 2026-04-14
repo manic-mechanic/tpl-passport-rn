@@ -2,9 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRouter } from 'expo-router'
 import { useMemo, useRef, useState } from 'react'
 import {
-  Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View,
+  ActionSheetIOS, Image, Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { formatDist, haversineKm, physicalBranches } from '../composables/useRegion'
+import { compassPoints } from '../composables/useBadges'
 import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
@@ -44,6 +45,68 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
   const pastVisits = checkIns.filter(c => c.branchCode === branch.BranchCode)
   const streetAddress = branch.Address?.split(',')[0] ?? ''
 
+  async function openMaps() {
+    const q = encodeURIComponent(`${streetAddress}, Toronto, ON`)
+    const name = encodeURIComponent(branch.BranchName)
+    const lat = branch.Lat
+    const lng = branch.Long
+
+    const appleMapsUrl = lat && lng
+      ? `maps:?ll=${lat},${lng}&q=${name}`
+      : `maps:?q=${q}`
+    const googleMapsUrl = lat && lng
+      ? `comgooglemaps://?q=${name}&center=${lat},${lng}`
+      : `comgooglemaps://?q=${q}`
+    const wazeUrl = lat && lng
+      ? `waze://?ll=${lat},${lng}&navigate=yes`
+      : `waze://?q=${q}`
+
+    if (Platform.OS === 'android') {
+      Linking.openURL(`geo:${lat ?? 0},${lng ?? 0}?q=${q}`)
+      return
+    }
+
+    const [hasGoogle, hasWaze] = await Promise.all([
+      Linking.canOpenURL('comgooglemaps://'),
+      Linking.canOpenURL('waze://'),
+    ])
+
+    const options = [
+      'Apple Maps',
+      ...(hasGoogle ? ['Google Maps'] : []),
+      ...(hasWaze ? ['Waze'] : []),
+      'Cancel',
+    ]
+    const urls = [
+      appleMapsUrl,
+      ...(hasGoogle ? [googleMapsUrl] : []),
+      ...(hasWaze ? [wazeUrl] : []),
+    ]
+
+    if (options.length === 2) {
+      // Only Apple Maps available — open directly
+      Linking.openURL(appleMapsUrl)
+      return
+    }
+
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options, cancelButtonIndex: options.length - 1, title: branch.BranchName },
+      idx => { if (idx < urls.length) Linking.openURL(urls[idx]) }
+    )
+  }
+
+  const compassDirection = (() => {
+    const entry = Object.entries(compassPoints).find(([, code]) => code === branch.BranchCode)
+    if (!entry) return null
+    return { n: 'North', s: 'South', e: 'East', w: 'West' }[entry[0]] ?? null
+  })()
+
+  const services = [
+    branch.KidsStop && 'Kids Stop',
+    branch.CLC && 'Computer Learning Centre',
+    branch.YouthHub && 'Youth Hub',
+  ].filter(Boolean) as string[]
+
   const todayHours = branchHours[branch.BranchCode]?.[DAYS[new Date().getDay()]] ?? null
   const hasParking = branch.PublicParking && branch.PublicParking !== '0' && branch.PublicParking !== 0
 
@@ -66,15 +129,22 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
           <Text style={[styles.branchName, { color: theme.textPrimary, fontFamily: fonts.display }]}>
             {branch.BranchName}
           </Text>
+          {compassDirection ? (
+            <View style={[styles.compassTag, { backgroundColor: theme.borderSoft }]}>
+              <Text style={[styles.compassTagText, { color: theme.textMuted }]}>
+                Compass point · {compassDirection}
+              </Text>
+            </View>
+          ) : null}
           {todayHours ? (
             <Text style={[styles.hours, { color: theme.textMuted }]}>Today {todayHours}</Text>
           ) : null}
           <View style={styles.metaList}>
             {streetAddress ? (
-              <View style={styles.metaRow}>
+              <TouchableOpacity style={styles.metaRow} onPress={openMaps}>
                 <Ionicons name="location-outline" size={12} color={theme.textMuted} />
                 <Text style={[styles.metaText, { color: theme.textMuted }]}>{streetAddress}</Text>
-              </View>
+              </TouchableOpacity>
             ) : null}
             {branch.Telephone ? (
               <TouchableOpacity style={styles.metaRow} onPress={() => Linking.openURL(`tel:${branch.Telephone}`)}>
@@ -130,6 +200,20 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
 
       {/* History */}
       <HistorySection branchCode={branch.BranchCode} visitCount={pastVisits.length} />
+
+      {/* Programs & services */}
+      {services.length > 0 && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionHeading, { color: theme.textPrimary }]}>Programs &amp; services</Text>
+          <View style={styles.tagList}>
+            {services.map(s => (
+              <View key={s} style={[styles.tag, { backgroundColor: theme.borderSoft }]}>
+                <Text style={[styles.tagText, { color: theme.tplBlue }]}>{s}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       {/* Nearby branches */}
       {nearbyBranches.length > 0 && (
@@ -240,6 +324,32 @@ const styles = StyleSheet.create({
   nearbyInfo: {
     flex: 1,
     gap: 2,
+  },
+  compassTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 100,
+    marginTop: 2,
+  },
+  compassTagText: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  tagList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  tagText: {
+    fontSize: textSize.sm,
+    fontWeight: '600',
   },
   nearbyName: {
     fontSize: textSize.sm,
