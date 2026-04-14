@@ -26,6 +26,11 @@ export default function SignInScreen() {
   const emailRef = useRef<TextInput>(null)
   const passwordRef = useRef<TextInput>(null)
 
+  function switchMode(next: 'signin' | 'signup') {
+    setMode(next)
+    setError(null)
+  }
+
   async function handleEmailSubmit() {
     if (!email.trim() || !password.trim()) {
       setError('Email and password are required.')
@@ -74,29 +79,24 @@ export default function SignInScreen() {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[styles.lead, { color: theme.textMuted }]}>
-            Save your passport progress and access it on any device.
-          </Text>
-
-          {/* Google */}
-          <TouchableOpacity
-            style={[styles.googleBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
-            onPress={handleGoogle}
-            disabled={googleLoading}
-          >
-            {googleLoading
-              ? <ActivityIndicator color={theme.textPrimary} />
-              : <>
-                  <Ionicons name="logo-google" size={18} color={theme.textPrimary} />
-                  <Text style={[styles.googleBtnText, { color: theme.textPrimary }]}>Continue with Google</Text>
-                </>
-            }
-          </TouchableOpacity>
-
-          <View style={styles.dividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-            <Text style={[styles.dividerText, { color: theme.textMuted }]}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+          {/* Tab row */}
+          <View style={[styles.tabRow, { borderBottomColor: theme.border }]}>
+            <TouchableOpacity
+              style={[styles.tabBtn, mode === 'signin' && { borderBottomColor: theme.tplBlue }]}
+              onPress={() => switchMode('signin')}
+            >
+              <Text style={[styles.tabBtnText, { color: mode === 'signin' ? theme.tplBlue : theme.textMuted }]}>
+                Sign in
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabBtn, mode === 'signup' && { borderBottomColor: theme.tplBlue }]}
+              onPress={() => switchMode('signup')}
+            >
+              <Text style={[styles.tabBtnText, { color: mode === 'signup' ? theme.tplBlue : theme.textMuted }]}>
+                Create account
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Email fields */}
@@ -167,16 +167,25 @@ export default function SignInScreen() {
             }
           </TouchableOpacity>
 
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            <Text style={[styles.dividerText, { color: theme.textMuted }]}>or</Text>
+            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+          </View>
+
+          {/* Google */}
           <TouchableOpacity
-            onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null) }}
-            style={styles.toggleRow}
+            style={[styles.googleBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+            onPress={handleGoogle}
+            disabled={googleLoading}
           >
-            <Text style={[styles.toggleText, { color: theme.textMuted }]}>
-              {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <Text style={{ color: theme.tplBlue, fontWeight: '600' }}>
-                {mode === 'signin' ? 'Create one' : 'Sign in'}
-              </Text>
-            </Text>
+            {googleLoading
+              ? <ActivityIndicator color={theme.textPrimary} />
+              : <>
+                  <Ionicons name="logo-google" size={18} color={theme.textPrimary} />
+                  <Text style={[styles.googleBtnText, { color: theme.textPrimary }]}>Continue with Google</Text>
+                </>
+            }
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -188,34 +197,26 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 8,
     gap: 16,
   },
-  lead: {
-    fontSize: textSize.md,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  googleBtn: {
+  tabRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: 14,
+    borderBottomWidth: 1,
+    marginBottom: 8,
   },
-  googleBtnText: {
-    fontSize: textSize.base,
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginBottom: -1,
+  },
+  tabBtnText: {
+    fontSize: textSize.md,
     fontWeight: '600',
   },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  dividerLine: { flex: 1, height: 1 },
-  dividerText: { fontSize: textSize.sm },
   field: { gap: 6 },
   fieldLabel: {
     fontSize: textSize.sm,
@@ -245,6 +246,24 @@ const styles = StyleSheet.create({
     fontSize: textSize.base,
     fontWeight: '700',
   },
-  toggleRow: { alignItems: 'center' },
-  toggleText: { fontSize: textSize.md },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontSize: textSize.sm },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+  },
+  googleBtnText: {
+    fontSize: textSize.base,
+    fontWeight: '600',
+  },
 })
