@@ -130,7 +130,7 @@ export default function HistoryScreen() {
           if (!branch) return null
           return (
             <TouchableOpacity
-              style={[styles.row, { borderColor: theme.borderSoft }]}
+              style={[styles.row, { borderColor: theme.borderSoft, backgroundColor: theme.surface }]}
               onPress={() => router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })}
               activeOpacity={0.7}
             >
