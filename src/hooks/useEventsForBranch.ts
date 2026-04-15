@@ -33,12 +33,8 @@ function normalize(raw: RawCkanEvent): BranchEvent {
   }
 }
 
-function filterToWindow(records: RawCkanEvent[]): RawCkanEvent[] {
-  const today = new Date().toISOString().slice(0, 10)
-  const tomorrow = new Date(Date.now() + MS_PER_DAY).toISOString().slice(0, 10)
-  return records
-    .filter(e => e.StartDateLocal >= today && e.StartDateLocal <= tomorrow)
-    .sort((a, b) => (a.StartDateLocal < b.StartDateLocal ? -1 : 1))
+function dateString(offsetDays: number): string {
+  return new Date(Date.now() + offsetDays * MS_PER_DAY).toISOString().slice(0, 10)
 }
 
 export function useEventsForBranch(branchName: string): { events: BranchEvent[]; loading: boolean } {
@@ -48,13 +44,26 @@ export function useEventsForBranch(branchName: string): { events: BranchEvent[];
   useEffect(() => {
     const ac = new AbortController()
     const shortName = branchName.replace(/ Branch$/i, '')
-    const filters = JSON.stringify({ LocationName: shortName })
-    const url = `${CKAN_BASE_URL}/datastore_search?id=${EVENTS_RESOURCE_ID}&filters=${encodeURIComponent(filters)}&limit=100&sort=StartDateLocal%20asc`
-    fetch(url, { signal: ac.signal })
-      .then(r => r.json())
-      .then(data => setEvents(filterToWindow(data.result?.records ?? []).map(normalize)))
+
+    const dates = [dateString(0), dateString(1)]
+    const requests = dates.map(date => {
+      const filters = encodeURIComponent(JSON.stringify({ LocationName: shortName, StartDateLocal: date }))
+      const url = `${CKAN_BASE_URL}/datastore_search?id=${EVENTS_RESOURCE_ID}&filters=${filters}&limit=200&sort=StartTime%20asc`
+      return fetch(url, { signal: ac.signal }).then(r => r.json())
+    })
+
+    Promise.all(requests)
+      .then(results => {
+        const all: RawCkanEvent[] = results.flatMap(data => data.result?.records ?? [])
+        const sorted = all.sort((a, b) => {
+          if (a.StartDateLocal !== b.StartDateLocal) return a.StartDateLocal < b.StartDateLocal ? -1 : 1
+          return (a.StartTime ?? '') < (b.StartTime ?? '') ? -1 : 1
+        })
+        setEvents(sorted.map(normalize))
+      })
       .catch(err => { if (!(err instanceof Error && err.name === 'AbortError')) setEvents([]) })
       .finally(() => setLoading(false))
+
     return () => ac.abort()
   }, [branchName])
 

@@ -36,7 +36,7 @@ for (const b of sortedBranches) {
   branchByShortName.set(b.BranchName.replace(/ Branch$/i, '').toLowerCase(), b)
 }
 
-function normalize(raw: RawEvent): AggregatedEvent {
+export function normalize(raw: RawEvent): AggregatedEvent {
   const locationName = raw.LocationName ?? raw.Location ?? ''
   return {
     id: raw._id,
@@ -70,7 +70,7 @@ export function useAllEvents(): { events: AggregatedEvent[]; loading: boolean; e
 
     Promise.all(requests)
       .then(results => {
-        const all: RawEvent[] = results.flatMap(data => data.result?.records ?? [])
+        const all: RawEvent[] = results.flatMap(data => data.result?.records ?? []).filter(e => e.LocationName ?? e.Location)
         const sorted = all.sort((a, b) => {
           if (a.StartDateLocal !== b.StartDateLocal) return a.StartDateLocal < b.StartDateLocal ? -1 : 1
           return (a.StartTime ?? '') < (b.StartTime ?? '') ? -1 : 1
