@@ -91,7 +91,7 @@ export default function ExploreScreen() {
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
-  const { events, loading: eventsLoading } = useAllEvents()
+  const { events, loading: eventsLoading, error: eventsError } = useAllEvents()
 
   useEffect(() => { detectNearby() }, [])
 
@@ -316,6 +316,8 @@ export default function ExploreScreen() {
           <View style={styles.section}>
             {eventsLoading ? (
               <ActivityIndicator color={theme.tplBlue} style={styles.loader} />
+            ) : eventsError ? (
+              <Text style={[styles.comingSoon, { color: theme.textMuted }]}>{eventsError}</Text>
             ) : sortedEvents.length === 0 ? (
               <Text style={[styles.comingSoon, { color: theme.textMuted }]}>
                 No upcoming events in the next 7 days.
