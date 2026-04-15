@@ -176,7 +176,7 @@ export function CheckInForm({ prefillCode, onSuccess }: Props) {
               {/* Reserved space for check-in error — prevents layout shift */}
               <View style={styles.checkInErrorWrap}>
                 {checkInError ? (
-                  <Text style={[styles.checkInErrorText, { color: '#c0392b' }]}>
+                  <Text style={[styles.checkInErrorText, { color: theme.error }]}>
                     {checkInError}
                   </Text>
                 ) : null}

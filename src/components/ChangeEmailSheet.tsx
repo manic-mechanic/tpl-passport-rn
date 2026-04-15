@@ -85,7 +85,7 @@ function ChangeEmailSheetComponent(_props: {}, ref: React.ForwardedRef<ChangeEma
           onSubmitEditing={submit}
         />
 
-        {error ? <Text style={[styles.error, { color: '#c0392b' }]}>{error}</Text> : null}
+        {error ? <Text style={[styles.error, { color: theme.error }]}>{error}</Text> : null}
 
         <View style={styles.actions}>
           <TouchableOpacity

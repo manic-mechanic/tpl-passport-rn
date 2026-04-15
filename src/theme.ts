@@ -8,6 +8,7 @@ export const colors = {
   border: '#d4cfc4',
   borderSoft: '#e8e3d8',
   shadowColor: '#001c71',
+  error: '#c0392b',
 }
 
 export const dark = {
@@ -21,6 +22,7 @@ export const dark = {
   border: '#333333',
   borderSoft: '#2a2a2a',
   shadowColor: '#000000',
+  error: '#e74c3c',
 }
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }

@@ -117,7 +117,7 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
       .map(b => ({ ...b, distKm: haversineKm(branch.Lat, branch.Long, b.Lat, b.Long) }))
       .sort((a, b) => a.distKm - b.distKm)
       .slice(0, 2)
-  }, [branch.BranchCode])
+  }, [branch.BranchCode, branch.Lat, branch.Long])
 
   return (
     <View style={styles.container}>
@@ -223,7 +223,7 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
             <TouchableOpacity
               key={nb.BranchCode}
               style={[styles.nearbyRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
-              onPress={() => onNearbyPress ? onNearbyPress(nb.BranchCode) : router.push({ pathname: '/branch/[id]', params: { id: nb.BranchCode } })}
+              onPress={() => onNearbyPress?.(nb.BranchCode)}
             >
               <StampShape branchCode={nb.BranchCode} wardNo={nb.WardNo} size={36} ghost={!hasVisited(nb.BranchCode)} />
               <View style={styles.nearbyInfo}>

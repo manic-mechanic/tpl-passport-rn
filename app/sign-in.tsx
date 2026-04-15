@@ -153,7 +153,7 @@ export default function SignInScreen() {
           </View>
 
           {error && (
-            <Text style={[styles.errorText, { color: '#c0392b' }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
           )}
 
           <TouchableOpacity

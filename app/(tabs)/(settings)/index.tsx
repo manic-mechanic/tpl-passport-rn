@@ -69,7 +69,7 @@ export default function SettingsScreen() {
                     ) : null}
                   </View>
                   <TouchableOpacity onPress={() => authClient.signOut()} hitSlop={8}>
-                    <Text style={[styles.actionLink, { color: '#c0392b' }]}>Sign out</Text>
+                    <Text style={[styles.actionLink, { color: theme.error }]}>Sign out</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -214,7 +214,7 @@ export default function SettingsScreen() {
                   ])
                 }
               >
-                <Text style={[styles.settingLabel, { color: '#c0392b' }]}>Reset all data</Text>
+                <Text style={[styles.settingLabel, { color: theme.error }]}>Reset all data</Text>
               </TouchableOpacity>
             )}
           </View>

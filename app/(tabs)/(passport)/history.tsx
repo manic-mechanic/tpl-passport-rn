@@ -9,6 +9,7 @@ import { physicalBranches } from '@/src/composables/useRegion'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { fonts, textSize } from '@/src/theme'
+import { MS_PER_DAY } from '@/src/constants'
 import type { CheckIn } from '@/src/types'
 
 type HistoryGroup = { title: string; data: CheckIn[] }
@@ -24,8 +25,8 @@ function formatMeta(iso: string): string {
 function groupCheckIns(checkIns: CheckIn[], memoriesOnly: boolean): HistoryGroup[] {
   const now = new Date()
   const todayStr = now.toDateString()
-  const yesterdayStr = new Date(now.getTime() - 86400000).toDateString()
-  const weekAgo = new Date(now.getTime() - 7 * 86400000)
+  const yesterdayStr = new Date(now.getTime() - MS_PER_DAY).toDateString()
+  const weekAgo = new Date(now.getTime() - 7 * MS_PER_DAY)
 
   const source = memoriesOnly
     ? checkIns.filter(c => c.note?.trim() || c.photoUri)
