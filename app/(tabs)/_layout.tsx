@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs'
 import { Tabs, useRouter } from 'expo-router'
 import { useEffect } from 'react'
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle, Polyline } from 'react-native-svg'
 
 function CheckInIcon({ color }: { color: string }) {
@@ -49,6 +49,7 @@ export default function TabLayout() {
   // iOS Expo Go caches the last route in AsyncStorage across launches and
   // a simulator restart doesn't clear it, so initialRouteName alone isn't enough.
   useEffect(() => {
+    if (Platform.OS === 'web') return
     Linking.getInitialURL().then(url => {
       if (!url?.startsWith('tplpassportrn://')) {
         router.navigate('/(tabs)/(home)')
