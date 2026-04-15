@@ -450,13 +450,13 @@ const styles = StyleSheet.create({
   tabPill: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 2.5,
     borderBottomColor: 'transparent',
     marginBottom: -1.5,
   },
   tabLabel: {
-    fontSize: textSize.sm,
+    fontSize: textSize.md,
     fontWeight: '600',
   },
 

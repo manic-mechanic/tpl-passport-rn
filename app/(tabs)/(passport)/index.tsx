@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useLastNonNull } from '@/src/hooks/useLastNonNull'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -86,12 +86,7 @@ export default function PassportScreen() {
         }
       />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={[styles.tabNav, { backgroundColor: theme.bg, borderTopColor: theme.border, borderBottomColor: theme.borderSoft }]}
-        contentContainerStyle={styles.tabNavContent}
-      >
+      <View style={[styles.tabNav, { backgroundColor: theme.bg, borderTopColor: theme.border, borderBottomColor: theme.borderSoft }]}>
         {pages.map((page, i) => (
           <TouchableOpacity
             key={page.label}
@@ -121,7 +116,7 @@ export default function PassportScreen() {
             Extra Credit
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       {isExtraCredit ? (
         <BadgeGrid
@@ -197,26 +192,26 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   tabNav: {
-    flexGrow: 0,
+    flexDirection: 'row',
     borderTopWidth: 1,
     borderBottomWidth: 1.5,
   },
-  tabNavContent: {
-    paddingHorizontal: 18,
-  },
   pageTab: {
-    paddingHorizontal: 10,
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 6,
     paddingVertical: 10,
-    marginRight: 4,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
     borderRightWidth: 1,
+    marginBottom: -1.5,
   },
   pageTabLast: {
+    flex: 2,
     borderRightWidth: 0,
   },
   pageTabText: {
-    fontSize: textSize.md,
+    fontSize: textSize.sm,
     fontWeight: '600',
   },
   pageNav: {

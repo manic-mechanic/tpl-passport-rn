@@ -225,7 +225,7 @@ export function BranchDetail({ branch, origin, onNearbyPress }: Props) {
               style={[styles.nearbyRow, { backgroundColor: theme.surface, borderColor: theme.borderSoft }]}
               onPress={() => onNearbyPress ? onNearbyPress(nb.BranchCode) : router.push({ pathname: '/branch/[id]', params: { id: nb.BranchCode } })}
             >
-              <StampShape branchCode={nb.BranchCode} wardNo={nb.WardNo} size={36} />
+              <StampShape branchCode={nb.BranchCode} wardNo={nb.WardNo} size={36} ghost={!hasVisited(nb.BranchCode)} />
               <View style={styles.nearbyInfo}>
                 <Text style={[styles.nearbyName, { color: theme.textPrimary }]}>{nb.BranchName}</Text>
                 <Text style={[styles.nearbyDist, { color: theme.textMuted }]}>{formatDist(nb.distKm)} away</Text>
