@@ -73,15 +73,7 @@ export default function PassportScreen() {
     router.push({ pathname: './branch/[id]', params: { id: branch.BranchCode } })
   }
 
-  const completeTabStyle = {
-    backgroundColor: `${theme.tplBlue}14`,
-    borderTopWidth: 1 as const,
-    borderTopColor: theme.tplNavy,
-    borderLeftWidth: 1 as const,
-    borderLeftColor: theme.tplNavy,
-    borderRightWidth: 1 as const,
-    borderRightColor: theme.tplNavy,
-  }
+  const completeTabBg = 'rgba(200, 120, 32, 0.08)'
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -97,7 +89,7 @@ export default function PassportScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={[styles.tabNav, { borderBottomColor: theme.borderSoft }]}
+        style={[styles.tabNav, { backgroundColor: theme.bg, borderTopColor: theme.border, borderBottomColor: theme.borderSoft }]}
         contentContainerStyle={styles.tabNavContent}
       >
         {pages.map((page, i) => (
@@ -106,8 +98,9 @@ export default function PassportScreen() {
             onPress={() => setActivePage(i)}
             style={[
               styles.pageTab,
+              { borderRightColor: theme.borderSoft },
               activePage === i && { borderBottomColor: theme.tplNavy },
-              isPageComplete(page) && [styles.pageTabComplete, completeTabStyle],
+              isPageComplete(page) && { backgroundColor: completeTabBg },
             ]}
           >
             <Text style={[styles.pageTabText, { color: activePage === i ? theme.tplNavy : theme.textMuted }]}>
@@ -119,8 +112,9 @@ export default function PassportScreen() {
           onPress={() => setActivePage(EXTRA_CREDIT_IDX)}
           style={[
             styles.pageTab,
+            styles.pageTabLast,
             activePage === EXTRA_CREDIT_IDX && { borderBottomColor: theme.tplNavy },
-            allBadgesEarned && [styles.pageTabComplete, completeTabStyle],
+            allBadgesEarned && { backgroundColor: completeTabBg },
           ]}
         >
           <Text style={[styles.pageTabText, { color: activePage === EXTRA_CREDIT_IDX ? theme.tplNavy : theme.textMuted }]}>
@@ -204,20 +198,23 @@ const styles = StyleSheet.create({
   },
   tabNav: {
     flexGrow: 0,
-    borderBottomWidth: 2,
-    paddingTop: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1.5,
   },
   tabNavContent: {
     paddingHorizontal: 18,
   },
   pageTab: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 10,
     paddingVertical: 10,
     marginRight: 4,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
+    borderRightWidth: 1,
   },
-  pageTabComplete: {},
+  pageTabLast: {
+    borderRightWidth: 0,
+  },
   pageTabText: {
     fontSize: textSize.md,
     fontWeight: '600',

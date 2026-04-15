@@ -31,8 +31,7 @@ export default function BranchesScreen() {
     return sortedBranches.filter(
       b =>
         b.BranchName.toLowerCase().includes(q) ||
-        b.District?.toLowerCase().includes(q) ||
-        b.Neighbourhood?.toLowerCase().includes(q),
+        b.Address?.toLowerCase().includes(q),
     )
   }, [query])
 
@@ -94,9 +93,9 @@ export default function BranchesScreen() {
               <Text style={[styles.rowName, { color: theme.textPrimary }]} numberOfLines={1}>
                 {branch.BranchName}
               </Text>
-              {branch.District ? (
+              {branch.Address ? (
                 <Text style={[styles.rowSub, { color: theme.textMuted }]} numberOfLines={1}>
-                  {branch.District}
+                  {branch.Address.split(',')[0]}
                 </Text>
               ) : null}
             </View>
