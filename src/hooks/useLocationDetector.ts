@@ -1,10 +1,8 @@
-import * as Location from 'expo-location'
 import { useState } from 'react'
 import { getErrorCode } from '../lib/errors'
+import { requestLocation } from '../lib/location'
 import { haversineKm, sortedBranches } from '../composables/useRegion'
-import { FALLBACK_BRANCH_CODE } from '../constants'
-
-const LOCATION_TIMEOUT_CODE = 3 // GeolocationPositionError.TIMEOUT
+import { FALLBACK_BRANCH_CODE, LOCATION_TIMEOUT_CODE } from '../constants'
 
 type DetectResult =
   | { type: 'code'; code: string }
@@ -19,14 +17,13 @@ export function useLocationDetector(hasVisitedToday: (code: string) => boolean) 
     setDetecting(true)
     setLocationError(null)
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
+      const coords = await requestLocation()
+      if (!coords) {
         setLocationError('Location access denied — showing default branch.')
         return { type: 'code', code: FALLBACK_BRANCH_CODE }
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
       const nearest = sortedBranches
-        .map(b => ({ ...b, distKm: haversineKm(pos.coords.latitude, pos.coords.longitude, b.Lat, b.Long) }))
+        .map(b => ({ ...b, distKm: haversineKm(coords.latitude, coords.longitude, b.Lat, b.Long) }))
         .sort((a, b) => a.distKm - b.distKm)[0]
       if (hasVisitedToday(nearest.BranchCode)) {
         return { type: 'picker' }

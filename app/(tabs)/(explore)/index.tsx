@@ -3,6 +3,8 @@ import { StampShape } from '@/src/components/StampShape'
 import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
 import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
 import { useAllEvents, type AggregatedEvent } from '@/src/hooks/useAllEvents'
+import { formatAudiences, formatEventTime } from '@/src/lib/events'
+import { requestLocation } from '@/src/lib/location'
 import routesData from '@tpl-passport/shared/data/routes.json'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
@@ -10,7 +12,6 @@ import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { fonts, radius, textSize } from '@/src/theme'
 import type { Branch, Route } from '@/src/types'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
@@ -34,39 +35,6 @@ const MODES: { id: Mode; icon: string; label: string }[] = [
   { id: 'transit', icon: 'bus-outline', label: 'Transit' },
   { id: 'drive', icon: 'car-outline', label: 'Drive' },
 ]
-
-const AUDIENCE_MAP: Record<string, string> = {
-  'Adults (18+)': 'Adults',
-  'Older Adults': 'Seniors',
-  'Younger Adults (18-24)': 'Ages 18–24',
-  'Teens (13-17)': 'Teens',
-  'School Age Children (6-12)': 'Kids 6–12',
-  'Preschool Children (0-5)': 'Ages 0–5',
-}
-const ADULT_GROUPS = new Set(['Adults (18+)', 'Older Adults', 'Younger Adults (18-24)'])
-const KID_GROUPS = new Set(['Teens (13-17)', 'School Age Children (6-12)', 'Preschool Children (0-5)'])
-
-function formatAudiences(raw: string): string {
-  if (!raw) return ''
-  const groups = raw.split(',').map(g => g.trim())
-  const adults = groups.filter(g => ADULT_GROUPS.has(g))
-  const kids = groups.filter(g => KID_GROUPS.has(g))
-  if (adults.length >= 1 && kids.length >= 1) return 'All ages'
-  if (adults.length >= 2) return 'Adults'
-  if (kids.length >= 2) return 'Kids'
-  return groups.map(g => AUDIENCE_MAP[g] ?? g).join(', ')
-}
-
-function formatEventTime(s: string): string {
-  if (!s) return ''
-  const tIdx = s.indexOf('T')
-  const timePart = tIdx !== -1 ? s.slice(tIdx + 1) : s
-  const [h, m] = timePart.split(':').map(Number)
-  if (isNaN(h) || isNaN(m)) return ''
-  const suffix = h >= 12 ? 'pm' : 'am'
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-  return `${h12}:${String(m).padStart(2, '0')}${suffix}`
-}
 
 function formatEventDate(dateStr: string): { day: number; month: string; weekday: string } {
   const d = new Date(dateStr + 'T00:00:00')
@@ -99,13 +67,12 @@ export default function ExploreScreen() {
     setLocationLoading(true)
     setLocationError(null)
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
+      const coords = await requestLocation()
+      if (!coords) {
         setLocationError('Enable location to see nearby branches.')
         return
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const { latitude: lat, longitude: lng } = pos.coords
+      const { latitude: lat, longitude: lng } = coords
       setUserLocation({ lat, lng })
       const sorted = sortedBranches
         .map(b => ({ ...b, distKm: haversineKm(lat, lng, b.Lat, b.Long) }))

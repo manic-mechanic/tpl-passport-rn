@@ -6,14 +6,13 @@ import { useTheme } from '../hooks/useTheme'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { CheckIn } from '../types'
+import { ANIMATION_CONFIGS, bottomSheetStyles } from './shared/bottomSheetStyles'
 
 // Expose the same surface as BottomSheetModal so callers use the same ref type.
 export interface NoteEditSheetMethods {
   present: (visit: CheckIn) => void
   dismiss: () => void
 }
-
-const ANIMATION_CONFIGS = { damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 function NoteEditSheetComponent(
@@ -51,9 +50,9 @@ function NoteEditSheetComponent(
       ref={sheetRef}
       enableDynamicSizing
       bottomInset={tabBarHeight}
-      backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
+      backgroundStyle={[bottomSheetStyles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
       handleIndicatorStyle={{ backgroundColor: theme.border }}
-      style={[styles.sheetShadow, { shadowColor: theme.shadowColor }]}
+      style={[bottomSheetStyles.sheetShadow, { shadowColor: theme.shadowColor }]}
       animationConfigs={ANIMATION_CONFIGS}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -78,11 +77,11 @@ function NoteEditSheetComponent(
         />
 
         <View style={styles.actions}>
-          <TouchableOpacity onPress={() => sheetRef.current?.dismiss()} style={[styles.btn, { borderColor: theme.border }]}>
-            <Text style={[styles.btnText, { color: theme.textMuted }]}>Cancel</Text>
+          <TouchableOpacity onPress={() => sheetRef.current?.dismiss()} style={[bottomSheetStyles.btn, { borderColor: theme.border }]}>
+            <Text style={[bottomSheetStyles.btnText, { color: theme.textMuted }]}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={save} style={[styles.btn, styles.btnPrimary, { backgroundColor: theme.tplBlue }]}>
-            <Text style={[styles.btnText, { color: '#fff' }]}>Save</Text>
+          <TouchableOpacity onPress={save} style={[bottomSheetStyles.btn, bottomSheetStyles.btnPrimary, { backgroundColor: theme.tplBlue }]}>
+            <Text style={[bottomSheetStyles.btnText, { color: '#fff' }]}>Save</Text>
           </TouchableOpacity>
         </View>
       </BottomSheetView>
@@ -93,20 +92,6 @@ function NoteEditSheetComponent(
 export const NoteEditSheet = forwardRef(NoteEditSheetComponent)
 
 const styles = StyleSheet.create({
-  sheetBg: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-  },
-  sheetShadow: {
-    shadowColor: '#000',  // overridden inline via theme.shadowColor
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 10,
-  },
   content: {
     paddingHorizontal: 20,
     paddingTop: 4,
@@ -128,19 +113,5 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 10,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  btnPrimary: {
-    borderWidth: 0,
-  },
-  btnText: {
-    fontSize: textSize.sm,
-    fontWeight: '600',
   },
 })

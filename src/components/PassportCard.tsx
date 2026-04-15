@@ -100,14 +100,14 @@ export function PassportCard() {
   const theme = useTheme()
   const profile = usePassportStore(s => s.profile)
   const checkIns = usePassportStore(s => s.checkIns)
+  const visitCount = usePassportStore(s => s.visitCount())
+  const progressPct = usePassportStore(s => s.progressPct())
   const updateProfile = usePassportStore(s => s.updateProfile)
 
   const { data: session } = authClient.useSession()
   const signedIn = !!session?.user
   const branchPickerRef = useRef<BottomSheetModal>(null)
 
-  const visitCount = new Set(checkIns.map(c => c.branchCode)).size
-  const progressPct = Math.round((visitCount / physicalBranches.length) * 100)
   const issueYear = new Date().getFullYear()
   const { line1: mrzLine1, line2: mrzLine2 } = generateMRZ(profile.name, visitCount, progressPct, issueYear)
 

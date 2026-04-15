@@ -16,15 +16,13 @@ import { getErrorCode } from '../lib/errors'
 import { filterBranches, formatDist, haversineKm, sortedBranches } from '../composables/useRegion'
 import { useTheme } from '../hooks/useTheme'
 import { useLocationDetector } from '../hooks/useLocationDetector'
-import { MAX_CHECKIN_DISTANCE_KM } from '../constants'
+import { MAX_CHECKIN_DISTANCE_KM, LOCATION_TIMEOUT_CODE } from '../constants'
 import { usePassportStore } from '../stores/passport'
 import { fonts, radius, textSize } from '../theme'
 import type { Branch } from '../types'
 import { ScreenHeader } from './ScreenHeader'
 import { StampShape } from './StampShape'
 import { CheckInBranchPicker } from './CheckInBranchPicker'
-
-const LOCATION_TIMEOUT_CODE = 3 // GeolocationPositionError.TIMEOUT
 
 interface Props {
   prefillCode?: string

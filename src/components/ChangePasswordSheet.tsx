@@ -5,13 +5,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useTheme } from '../hooks/useTheme'
 import { authClient } from '../lib/auth-client'
 import { fonts, radius, textSize } from '../theme'
+import { ANIMATION_CONFIGS, bottomSheetStyles } from './shared/bottomSheetStyles'
 
 export interface ChangePasswordSheetMethods {
   present: () => void
   dismiss: () => void
 }
-
-const ANIMATION_CONFIGS = { damping: 24, stiffness: 200, mass: 0.6, overshootClamping: true }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 function ChangePasswordSheetComponent(_props: {}, ref: React.ForwardedRef<ChangePasswordSheetMethods>) {
@@ -61,9 +60,9 @@ function ChangePasswordSheetComponent(_props: {}, ref: React.ForwardedRef<Change
       ref={sheetRef}
       enableDynamicSizing
       bottomInset={tabBarHeight}
-      backgroundStyle={[styles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
+      backgroundStyle={[bottomSheetStyles.sheetBg, { backgroundColor: theme.surface, borderColor: theme.border }]}
       handleIndicatorStyle={{ backgroundColor: theme.border }}
-      style={[styles.sheetShadow, { shadowColor: theme.shadowColor }]}
+      style={[bottomSheetStyles.sheetShadow, { shadowColor: theme.shadowColor }]}
       animationConfigs={ANIMATION_CONFIGS}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -113,16 +112,16 @@ function ChangePasswordSheetComponent(_props: {}, ref: React.ForwardedRef<Change
         <View style={styles.actions}>
           <TouchableOpacity
             onPress={() => sheetRef.current?.dismiss()}
-            style={[styles.btn, { borderColor: theme.border }]}
+            style={[bottomSheetStyles.btn, { borderColor: theme.border }]}
           >
-            <Text style={[styles.btnText, { color: theme.textMuted }]}>Cancel</Text>
+            <Text style={[bottomSheetStyles.btnText, { color: theme.textMuted }]}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            style={[styles.btn, styles.btnPrimary, { backgroundColor: theme.tplBlue, opacity: loading ? 0.6 : 1 }]}
+            style={[bottomSheetStyles.btn, bottomSheetStyles.btnPrimary, { backgroundColor: theme.tplBlue, opacity: loading ? 0.6 : 1 }]}
           >
-            <Text style={[styles.btnText, { color: '#fff' }]}>{loading ? 'Saving…' : 'Update'}</Text>
+            <Text style={[bottomSheetStyles.btnText, { color: '#fff' }]}>{loading ? 'Saving…' : 'Update'}</Text>
           </TouchableOpacity>
         </View>
       </BottomSheetView>
@@ -133,20 +132,6 @@ function ChangePasswordSheetComponent(_props: {}, ref: React.ForwardedRef<Change
 export const ChangePasswordSheet = forwardRef(ChangePasswordSheetComponent)
 
 const styles = StyleSheet.create({
-  sheetBg: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-  },
-  sheetShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 10,
-  },
   content: {
     paddingHorizontal: 20,
     paddingTop: 4,
@@ -173,13 +158,4 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 2,
   },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  btnPrimary: { borderWidth: 0 },
-  btnText: { fontSize: textSize.sm, fontWeight: '600' },
 })
