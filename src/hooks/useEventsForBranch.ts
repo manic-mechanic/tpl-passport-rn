@@ -49,7 +49,7 @@ export function useEventsForBranch(branchName: string): { events: BranchEvent[];
     const ac = new AbortController()
     const shortName = branchName.replace(/ Branch$/i, '')
     const filters = JSON.stringify({ LocationName: shortName })
-    const url = `${CKAN_BASE_URL}/datastore_search?id=${EVENTS_RESOURCE_ID}&filters=${encodeURIComponent(filters)}&limit=100&sort=StartDateLocal%20desc`
+    const url = `${CKAN_BASE_URL}/datastore_search?id=${EVENTS_RESOURCE_ID}&filters=${encodeURIComponent(filters)}&limit=100&sort=StartDateLocal%20asc`
     fetch(url, { signal: ac.signal })
       .then(r => r.json())
       .then(data => setEvents(filterToWindow(data.result?.records ?? []).map(normalize)))

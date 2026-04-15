@@ -1,9 +1,10 @@
 import { colors, dark } from '@/src/theme'
+import { useTheme } from '@/src/hooks/useTheme'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs'
 import { Tabs, useRouter } from 'expo-router'
 import { useEffect } from 'react'
-import { Linking, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native'
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import Svg, { Circle, Polyline } from 'react-native-svg'
 
 function CheckInIcon({ color }: { color: string }) {
@@ -18,10 +19,10 @@ function CheckInIcon({ color }: { color: string }) {
 
 function CheckInTabButton({ onPress, accessibilityState }: BottomTabBarButtonProps) {
   const focused = accessibilityState?.selected
-  const scheme = useColorScheme()
-  const theme = scheme === 'dark' ? dark : colors
+  const theme = useTheme()
+  const isDark = theme === dark
   const orbColor = focused
-    ? scheme === 'dark' ? '#8bbcfa' : '#4d8fd3'
+    ? isDark ? '#8bbcfa' : '#4d8fd3'
     : theme.tplBlue
 
   return (
@@ -41,8 +42,7 @@ export const unstable_settings = {
 }
 
 export default function TabLayout() {
-  const scheme = useColorScheme()
-  const theme = scheme === 'dark' ? dark : colors
+  const theme = useTheme()
   const router = useRouter()
 
   // On cold launch (no incoming deep link), always land on home.
