@@ -1,14 +1,17 @@
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { sortedBranches, buildMapsUrl } from '@/src/composables/useRegion'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
-import { fonts, radius, textSize } from '@/src/theme'
+import { radius, textSize } from '@/src/theme'
 import type { Branch, Route } from '@/src/types'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import routesData from '@tpl-passport/shared/data/routes.json'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+const branchesByCode = Object.fromEntries(sortedBranches.map(b => [b.BranchCode, b]))
 
 export default function DayTripDetailScreen() {
   const theme = useTheme()
@@ -18,8 +21,6 @@ export default function DayTripDetailScreen() {
   const hasVisited = usePassportStore(s => s.hasVisited)
 
   const trip = (routesData as Route[]).find(r => r.id === id)
-
-  const branchesByCode = Object.fromEntries(sortedBranches.map(b => [b.BranchCode, b]))
   const branchObjects: Branch[] = trip
     ? trip.branches.map(code => branchesByCode[code]).filter((b): b is Branch => !!b)
     : []
@@ -29,13 +30,7 @@ export default function DayTripDetailScreen() {
   if (!trip) {
     return (
       <View style={[styles.container, { backgroundColor: theme.bg }]}>
-        <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: theme.tplNavy }]}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { fontFamily: fonts.display }]}>Day Trip</Text>
-          <View style={styles.backBtn} />
-        </View>
+        <ScreenHeader title="Day Trip" onBack={() => router.back()} />
         <Text style={[styles.notFound, { color: theme.textMuted }]}>Route not found.</Text>
       </View>
     )
@@ -43,16 +38,7 @@ export default function DayTripDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: fonts.display }]} numberOfLines={1}>
-          Day Trips
-        </Text>
-        <View style={styles.backBtn} />
-      </View>
+      <ScreenHeader title="Day Trips" onBack={() => router.back()} />
 
       <ScrollView
         style={styles.scroll}
@@ -134,20 +120,6 @@ export default function DayTripDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  backBtn: { width: 30 },
-  headerTitle: {
-    flex: 1,
-    fontSize: textSize.lg,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.92)',
-  },
   scroll: { flex: 1 },
   content: {
     paddingHorizontal: 18,

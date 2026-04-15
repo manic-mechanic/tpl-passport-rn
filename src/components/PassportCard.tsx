@@ -2,6 +2,14 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useRef } from 'react'
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { Defs, G, Mask, Path, Rect, Svg } from 'react-native-svg'
+import { physicalBranches } from '../composables/useRegion'
+import { useTheme } from '../hooks/useTheme'
+import { authClient } from '../lib/auth-client'
+import { generateMRZ } from '../lib/mrz'
+import { branchNameForCode } from '../lib/utils'
+import { usePassportStore } from '../stores/passport'
+import { fonts, radius, textSize } from '../theme'
+import { BranchPickerModal } from './BranchPickerModal'
 
 // boring-avatars beam algorithm (inlined — package utilities not exported at runtime)
 function _hash(name: string) {
@@ -19,14 +27,6 @@ function _contrast(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16)
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000000' : '#ffffff'
 }
-import { physicalBranches } from '../composables/useRegion'
-import { useTheme } from '../hooks/useTheme'
-import { authClient } from '../lib/auth-client'
-import { generateMRZ } from '../lib/mrz'
-import { branchNameForCode } from '../lib/utils'
-import { usePassportStore } from '../stores/passport'
-import { fonts, radius, textSize } from '../theme'
-import { BranchPickerModal } from './BranchPickerModal'
 
 const AVATAR_COLORS = [
   '#005fc0', // TPL blue

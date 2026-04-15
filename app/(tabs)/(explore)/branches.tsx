@@ -1,8 +1,9 @@
+import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
 import { sortedBranches } from '@/src/composables/useRegion'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
-import { fonts, radius, textSize } from '@/src/theme'
+import { radius, textSize } from '@/src/theme'
 import type { Branch } from '@/src/types'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRouter } from 'expo-router'
@@ -37,14 +38,7 @@ export default function BranchesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: theme.tplNavy }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-        <Text style={[styles.title, { fontFamily: fonts.display }]}>All Branches</Text>
-        <View style={styles.backBtn} />
-      </View>
+      <ScreenHeader title="All Branches" onBack={() => router.back()} />
 
       {/* Search bar */}
       <View style={[styles.searchBar, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -110,20 +104,6 @@ export default function BranchesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingBottom: 12,
-  },
-  backBtn: { width: 30 },
-  title: {
-    flex: 1,
-    fontSize: textSize.lg,
-    fontWeight: '600',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.92)',
-  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
