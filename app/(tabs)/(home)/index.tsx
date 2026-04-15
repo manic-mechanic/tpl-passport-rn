@@ -5,6 +5,7 @@ import { HomeBadgesStrip } from '@/src/components/HomeBadgesStrip'
 import { PassportCard } from '@/src/components/PassportCard'
 import { RecentVisits } from '@/src/components/RecentVisits'
 import { ScreenHeader } from '@/src/components/ScreenHeader'
+import { SignInBanner } from '@/src/components/SignInBanner'
 import { fonts, textSize } from '@/src/theme'
 
 export default function HomeScreen() {
@@ -26,6 +27,7 @@ export default function HomeScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
+        <SignInBanner />
         <PassportCard />
         <RecentVisits />
         <HomeBadgesStrip />
