@@ -21,7 +21,7 @@ export default function BranchDetailScreen() {
     tab === '(explore)' ? 'explore' : tab === '(passport)' ? 'passport' : undefined
 
   function navigateToNearby(code: string) {
-    router.replace({ pathname: './branch/[id]', params: { id: code } })
+    router.replace({ pathname: '../branch/[id]', params: { id: code } })
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }
 
