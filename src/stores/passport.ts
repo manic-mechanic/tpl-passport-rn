@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { physicalBranches } from '../composables/useRegion'
+import { checkInDayKey, physicalBranches } from '../composables/useRegion'
 import type { CheckIn, Profile } from '../types'
 
 export type { CheckIn, Profile }
@@ -40,11 +40,12 @@ export const usePassportStore = create<PassportStore>()(
       visitCount: () => get().visitedBranchCodes().size,
       visitedBranchCodes: () => new Set(get().checkIns.map(c => c.branchCode)),
       hasVisited: (code) => get().visitedBranchCodes().has(code),
+      // One check-in per branch per library day (Toronto time), the same rule
+      // as the server and the web app, wherever the phone is.
       hasVisitedToday: (code) => {
-        const today = new Date().toLocaleDateString('en-CA')
+        const today = checkInDayKey(new Date())
         return get().checkIns.some(c =>
-          c.branchCode === code &&
-          new Date(c.timestamp).toLocaleDateString('en-CA') === today
+          c.branchCode === code && checkInDayKey(c.timestamp) === today
         )
       },
       progressPct: () =>
