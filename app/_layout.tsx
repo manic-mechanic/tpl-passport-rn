@@ -62,12 +62,15 @@ function RootLayoutNav() {
   const navyBg = colorScheme === 'dark' ? dark.tplNavy : colors.tplNavy;
   const { data: session } = authClient.useSession();
 
-  // When the user signs in, sync check-ins with server and migrate local photos to R2.
+  // When the user signs in, upload photos still on the device, then sync check-ins.
+  // Uploading first means the sync sends their R2 URLs; the server rejects a
+  // check-in whose photo is a local file path.
   useEffect(() => {
     if (!session?.user) return;
-    const { checkIns, setCheckIns, setCheckInPhoto } = usePassportStore.getState();
-    syncCheckIns(checkIns, setCheckIns);
-    migrateLocalPhotos(checkIns, setCheckInPhoto);
+    const { checkIns, setCheckInPhoto } = usePassportStore.getState();
+    migrateLocalPhotos(checkIns, setCheckInPhoto)
+      .then(() => syncCheckIns())
+      .catch(() => {});
     fetchProfile().then(p => {
       if (!p) return;
       const { profile, updateProfile } = usePassportStore.getState();

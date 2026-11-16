@@ -1,17 +1,15 @@
 import { ScreenHeader } from '@/src/components/ScreenHeader'
 import { StampShape } from '@/src/components/StampShape'
-import { sortedBranches, buildMapsUrl } from '@/src/composables/useRegion'
+import { branchesByCode, buildMapsUrl } from '@/src/composables/useRegion'
 import { useTheme } from '@/src/hooks/useTheme'
 import { usePassportStore } from '@/src/stores/passport'
-import { radius, textSize } from '@/src/theme'
+import { fonts, radius, textSize } from '@/src/theme'
 import type { Branch, Route } from '@/src/types'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import routesData from '@tpl-passport/shared/data/routes.json'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-const branchesByCode = Object.fromEntries(sortedBranches.map(b => [b.BranchCode, b]))
 
 export default function DayTripDetailScreen() {
   const theme = useTheme()

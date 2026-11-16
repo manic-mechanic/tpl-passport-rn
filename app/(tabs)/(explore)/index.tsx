@@ -1,7 +1,7 @@
 import { BadgeShape } from '@/src/components/BadgeShape'
 import { StampShape } from '@/src/components/StampShape'
 import { BADGES, useBadgeCtx } from '@/src/composables/useBadges'
-import { haversineKm, sortedBranches } from '@/src/composables/useRegion'
+import { branchesByCode, haversineKm, sortedBranches } from '@/src/composables/useRegion'
 import { useAllEvents, type AggregatedEvent } from '@/src/hooks/useAllEvents'
 import { formatAudiences, formatEventTime } from '@/src/lib/events'
 import { requestLocation } from '@/src/lib/location'
@@ -226,7 +226,7 @@ export default function ExploreScreen() {
             ) : (
               filteredRoutes.map((route: Route) => {
                 const routeBranches = route.branches
-                  .map(code => sortedBranches.find(b => b.BranchCode === code))
+                  .map(code => branchesByCode[code])
                   .filter((b): b is Branch => b !== undefined)
                 return (
                   <TouchableOpacity

@@ -1,5 +1,5 @@
-import { physicalBranches } from '../composables/useRegion'
+import { branchesByCode } from '../composables/useRegion'
 
 export function branchNameForCode(code: string): string {
-  return physicalBranches.find(b => b.BranchCode === code)?.BranchName ?? code
+  return branchesByCode[code]?.BranchName ?? code
 }

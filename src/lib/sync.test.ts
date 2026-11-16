@@ -74,10 +74,31 @@ describe('mergeCheckIns', () => {
       expect(merged[0].photoUri).toBe('local://photo')
     })
 
-    it('does not push a record that already exists on server', () => {
+    it('pushes a local note the server copy is missing', () => {
       const local = [ci('AGO', T1, 'updated note')]
       const server = [ci('AGO', T1, '')]
       const { toPush } = mergeCheckIns(local, server)
+      expect(toPush).toEqual([ci('AGO', T1, 'updated note')])
+    })
+
+    it('does not push a record the server already has in full', () => {
+      const local = [ci('AGO', T1, 'note')]
+      const server = [ci('AGO', T1, 'note')]
+      const { toPush } = mergeCheckIns(local, server)
+      expect(toPush).toEqual([])
+    })
+
+    it('pushes an uploaded photo the server copy is missing', () => {
+      const url = 'https://r2.example.com/photos/u1/a.jpg'
+      const { merged, toPush } = mergeCheckIns([ci('AGO', T1, '', url)], [ci('AGO', T1)])
+      expect(merged[0].photoUri).toBe(url)
+      expect(toPush).toEqual([ci('AGO', T1, '', url)])
+    })
+
+    it('keeps but does not push a photo still only on the device', () => {
+      const file = 'file:///docs/checkin-photos/a.jpg'
+      const { merged, toPush } = mergeCheckIns([ci('AGO', T1, '', file)], [ci('AGO', T1)])
+      expect(merged[0].photoUri).toBe(file)
       expect(toPush).toEqual([])
     })
   })
@@ -116,6 +137,23 @@ describe('mergeCheckIns', () => {
       expect(toPush).toEqual([ci('AGO', T3)])
     })
 
+    it("moves the dropped duplicate's note and photo onto the server copy", () => {
+      const url = 'https://r2.example.com/photos/u1/b.jpg'
+      const local = [ci('AGO', T2, 'from device B', url)]
+      const server = [ci('AGO', T1)]
+      const { merged, toPush } = mergeCheckIns(local, server)
+      expect(merged).toEqual([ci('AGO', T1, 'from device B', url)])
+      expect(toPush).toEqual([ci('AGO', T1, 'from device B', url)])
+    })
+
+    it("does not overwrite the server copy's own note", () => {
+      const local = [ci('AGO', T2, 'from device B')]
+      const server = [ci('AGO', T1, 'from device A')]
+      const { merged, toPush } = mergeCheckIns(local, server)
+      expect(merged[0].note).toBe('from device A')
+      expect(toPush).toEqual([])
+    })
+
     it('handles multiple concurrent duplicates', () => {
       // Three devices all checked in to AGO on Apr 10
       const T4 = '2024-04-10T18:00:00.000Z'
@@ -128,28 +166,24 @@ describe('mergeCheckIns', () => {
     })
   })
 
-  describe('timezone edge case', () => {
-    // mergeCheckIns dedup uses UTC date (timestamp.slice(0,10)).
-    // hasVisitedToday uses local time (toLocaleDateString).
-    // For users in UTC- timezones, a check-in late at night local time
-    // falls on the *next* UTC day, creating a mismatch.
-    //
-    // Example: Toronto (UTC-4), check-in at 10pm local = 2am UTC next day.
-    //   Device A: 2pm local Apr 10 → UTC 2024-04-10T18:00Z  (slice: 2024-04-10)
-    //   Device B: 10pm local Apr 10 → UTC 2024-04-11T02:00Z (slice: 2024-04-11)
-    //
-    // These are the SAME local day but DIFFERENT UTC dates, so the dedup
-    // does NOT catch this case. Documenting as a known limitation.
+  describe('library day (Toronto time)', () => {
+    // Same-day dedup uses the Toronto day, like the server and hasVisitedToday,
+    // not the UTC date.
 
-    it('does NOT dedup a same-local-day check-in that crosses the UTC midnight boundary', () => {
-      const deviceA = ci('AGO', '2024-04-10T18:00:00.000Z') // 2pm Toronto = Apr 10 UTC
-      const deviceB = ci('AGO', '2024-04-11T02:00:00.000Z') // 10pm Toronto = Apr 11 UTC
+    it('dedups an evening check-in that falls on the next UTC date', () => {
+      const deviceA = ci('AGO', '2024-04-10T18:00:00.000Z') // 2pm Toronto, Apr 10
+      const deviceB = ci('AGO', '2024-04-11T02:00:00.000Z') // 10pm Toronto, Apr 10
+      const { merged, toPush } = mergeCheckIns([deviceB], [deviceA])
+      expect(merged).toEqual([deviceA])
+      expect(toPush).toEqual([])
+    })
 
-      const { merged } = mergeCheckIns([deviceB], [deviceA])
-
-      // Both records survive because their UTC date prefixes differ (Apr 10 vs Apr 11).
-      // In a UTC-4 timezone, a user would see two check-ins for the same local day.
+    it('keeps check-ins on different Toronto days that share a UTC date', () => {
+      const lateApr9 = ci('AGO', '2024-04-10T03:00:00.000Z')  // 11pm Toronto, Apr 9
+      const apr10 = ci('AGO', '2024-04-10T14:00:00.000Z')     // 10am Toronto, Apr 10
+      const { merged, toPush } = mergeCheckIns([apr10], [lateApr9])
       expect(merged).toHaveLength(2)
+      expect(toPush).toEqual([apr10])
     })
   })
 })

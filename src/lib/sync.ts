@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store'
 import { getCookie } from '@better-auth/expo/client'
 import type { CheckIn } from '../types/index'
-import { mergeCheckIns } from './merge-check-ins'
+import { isHostedPhoto, mergeCheckIns } from './merge-check-ins'
+import { usePassportStore } from '../stores/passport'
 
 const BASE = 'https://auth.librarypassport.ca'
 const SESSION_COOKIE_KEY = 'tplpassport_cookie'
@@ -13,7 +14,12 @@ async function getAuthCookie(): Promise<string> {
   return cookie
 }
 
-export async function pushCheckIn(checkIn: CheckIn): Promise<void> {
+// Sends one check-in. A photo still only on this device (file://) is left
+// out: the server only accepts this user's own uploaded photo URLs and would
+// reject the whole check-in. Resolves to the timestamp of the check-in the
+// server kept instead when another one (e.g. from another device) already
+// holds this branch and library day, or null when this one was saved.
+async function postCheckIn(checkIn: CheckIn): Promise<string | null> {
   const cookie = await getAuthCookie()
   const res = await fetch(`${BASE}/api/checkins`, {
     method: 'POST',
@@ -21,19 +27,37 @@ export async function pushCheckIn(checkIn: CheckIn): Promise<void> {
       branchCode: checkIn.branchCode,
       timestamp: checkIn.timestamp,
       note: checkIn.note,
-      photoUri: checkIn.photoUri ?? null,
+      photoUri: isHostedPhoto(checkIn.photoUri) ? checkIn.photoUri : null,
     }),
     headers: { 'Content-Type': 'application/json', cookie },
   })
   if (!res.ok) throw new Error(`pushCheckIn failed: ${res.status}`)
+  const data = await res.json().catch(() => null) as { duplicateOf?: string | null } | null
+  return data?.duplicateOf ?? null
+}
+
+// Pushes a check-in made or edited here. If the server kept a different
+// check-in for that branch and day, sync so this device drops its copy and
+// moves its note or photo onto the kept one.
+export async function pushCheckIn(checkIn: CheckIn): Promise<void> {
+  const duplicateOf = await postCheckIn(checkIn)
+  if (duplicateOf) await syncCheckIns()
 }
 
 export { mergeCheckIns } from './merge-check-ins'
 
-export async function syncCheckIns(
-  localCheckIns: CheckIn[],
-  setCheckIns: (checkIns: CheckIn[]) => void
-): Promise<void> {
+let inFlight: Promise<void> | null = null
+
+// Merges the server's check-ins with this device's and pushes what the server
+// is missing. Concurrent calls share one run.
+export function syncCheckIns(): Promise<void> {
+  if (!inFlight) {
+    inFlight = runSync().finally(() => { inFlight = null })
+  }
+  return inFlight
+}
+
+async function runSync(): Promise<void> {
   const cookie = await getAuthCookie()
   const res = await fetch(`${BASE}/api/checkins`, { headers: { cookie } })
   if (!res.ok) return
@@ -52,10 +76,14 @@ export async function syncCheckIns(
     photoUri: row.photo_url ?? undefined,
   }))
 
+  // Read local state after the fetch, so a check-in made meanwhile isn't lost.
+  const { checkIns: localCheckIns, setCheckIns } = usePassportStore.getState()
   const { merged, toPush } = mergeCheckIns(localCheckIns, serverCheckIns)
   setCheckIns(merged)
+  // A duplicateOf here means another device saved the same branch and day
+  // since the fetch; the next sync folds it in.
   for (const ci of toPush) {
-    await pushCheckIn(ci).catch(() => {})
+    await postCheckIn(ci).catch(() => {})
   }
 }
 
